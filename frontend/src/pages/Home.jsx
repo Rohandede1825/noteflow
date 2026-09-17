@@ -75,7 +75,18 @@ export function Home() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 text-neutral-400">
+        <div className="flex items-center gap-2 text-neutral-400">
+          {typeof window !== 'undefined' && !window.electronAPI && !navigator.userAgent.toLowerCase().includes('electron') && (
+            <a
+              href="https://github.com/Rohandede1825/noteflow/releases/latest"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 hover:text-blue-300 border border-blue-500/30 rounded-full text-xs font-semibold transition-all mr-2"
+              title="Download NoteFlow .exe for Windows"
+            >
+              <span>⬇ Download for Windows</span>
+            </a>
+          )}
           <button
             onClick={() => openModal('search')}
             className="p-1.5 hover:text-white transition-colors"
