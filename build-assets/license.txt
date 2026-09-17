@@ -1,0 +1,22 @@
+NoteFlow — End-User License Agreement (EULA)
+
+Copyright © 2026 NoteFlow. All Rights Reserved.
+
+Please read the following terms and conditions carefully before installing and using NoteFlow.
+
+1. LICENSE GRANT
+NoteFlow grants you a non-exclusive, revocable, personal license to install and execute this software on compatible Windows, macOS, and Linux computing devices.
+
+2. PRIVACY & USER CONTENT OWNERSHIP
+All notes, handwriting vectors, drawings, audio recordings, and PDF documents created or imported into NoteFlow are your exclusive property. NoteFlow does not sell, analyze, or distribute your personal notes.
+
+3. OFFLINE & CLOUD STORAGE
+NoteFlow includes an embedded local storage engine to enable 100% offline handwriting and document authoring. When network connectivity is active, optional cloud synchronization connects to your secure MongoDB database backend.
+
+4. RESTRICTIONS
+You may not decompile, reverse engineer, or redistribute modified copies of NoteFlow without explicit written authorization from the authors.
+
+5. DISCLAIMER OF WARRANTIES
+NoteFlow is provided "AS IS" without warranty of any kind, express or implied. In no event shall the authors be liable for any damages arising out of the use or inability to use this software.
+
+By clicking "Agree and Continue" or "I Agree", you acknowledge that you have read, understood, and agree to be bound by the terms of this Agreement.
