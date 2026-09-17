@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Production & Build Artifacts
+dist/
+*/dist/
+build/
+*/build/
+release/
+*/release/
+
+# Binary builds
+*.exe
+*.zip
+*.asar
+*.dll
+*.pak
+*.bin
+*.dat
+
+# Environment & Logs
+.env
+.env.*
+*.log
+.DS_Store

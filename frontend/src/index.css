@@ -1,0 +1,133 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg-primary: #141517;
+  --color-bg-secondary: #19181a;
+  --color-bg-tertiary: #202226;
+  --color-header-blue: #23497d;
+  --color-header-blue-dark: #1b3a64;
+  --color-header-tab-active: #204272;
+  --color-paper-dark: #282a2d;
+  --color-paper-ruled-line: #3d4045;
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-border-subtle: rgba(255, 255, 255, 0.05);
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #A0A3AB;
+  --color-text-muted: #6C707C;
+  --color-accent: #2563EB;
+  --color-accent-hover: #1D4ED8;
+  --color-accent-subtle: rgba(37, 99, 235, 0.15);
+}
+
+.light {
+  --color-bg-primary: #EBECEF;
+  --color-bg-secondary: #FFFFFF;
+  --color-bg-tertiary: #F0F2F5;
+  --color-header-blue: #23497d;
+  --color-header-blue-dark: #1b3a64;
+  --color-header-tab-active: #204272;
+  --color-paper-dark: #FFFFFF;
+  --color-paper-ruled-line: #E2E4E8;
+  --color-border: rgba(0, 0, 0, 0.1);
+  --color-border-subtle: rgba(0, 0, 0, 0.05);
+  --color-text-primary: #17181C;
+  --color-text-secondary: #5C5F6A;
+  --color-text-muted: #8E929E;
+  --color-accent: #2563EB;
+  --color-accent-hover: #1D4ED8;
+  --color-accent-subtle: rgba(37, 99, 235, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 150, 161, 0.25);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 150, 161, 0.45);
+}
+
+/* Tool cursors */
+.cursor-pen {
+  cursor: crosshair;
+}
+
+.cursor-highlighter {
+  cursor: crosshair;
+}
+
+.cursor-eraser {
+  cursor: cell;
+}
+
+.cursor-laser {
+  cursor: default;
+}
+
+.cursor-text {
+  cursor: text;
+}
+
+.cursor-pan {
+  cursor: grab;
+}
+
+.cursor-panning {
+  cursor: grabbing !important;
+}
+
+/* Paper shadows */
+.shadow-paper-dark {
+  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.shadow-paper-light {
+  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.shadow-floating {
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* Print styles */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+}
