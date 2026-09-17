@@ -28,21 +28,9 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 
-// CORS setup
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://127.0.0.1:5173',
-  process.env.CLIENT_URL
-].filter(Boolean);
-
+// CORS setup (Permissive for Cloudflare Pages frontend & local development)
 app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps, curl, or same-origin)
-    if (!origin || allowedOrigins.includes(origin) || origin.startsWith('http://localhost:')) {
-      return callback(null, true);
-    }
-    return callback(null, true); // Dev-friendly permissive
-  },
+  origin: true,
   credentials: true
 }));
 
