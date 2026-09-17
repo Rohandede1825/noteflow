@@ -5,7 +5,6 @@ import { NotebookPage } from './pages/NotebookPage';
 import { TrashPage } from './pages/TrashPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { ToastContainer } from './components/Common/Toast';
-import { WelcomeAgreementModal } from './components/Modals/WelcomeAgreementModal';
 import { useSettingsStore } from './store/useSettingsStore';
 
 export function App() {
@@ -26,7 +25,6 @@ export function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      <WelcomeAgreementModal />
       <ToastContainer />
     </div>
   );
