@@ -10,6 +10,8 @@
     "start:backend": "node backend/src/server.js",
     "start:desktop": "electron .",
     "pack": "electron-builder --dir",
+    "build:desktop": "npm run build:frontend && electron-builder --dir",
+    "build:zip": "npm run build:desktop && powershell Compress-Archive -Path release/win-unpacked/* -DestinationPath release/NoteFlow-Windows-x64.zip -Force",
     "dist": "npm run build:frontend && electron-builder --win nsis portable --x64",
     "dist:fast": "electron-builder --win --x64"
   },
@@ -17,12 +19,15 @@
   "license": "MIT",
   "devDependencies": {
     "electron": "^28.3.3",
-    "electron-builder": "^24.13.3"
+    "electron-builder": "^24.13.3",
+    "jimp": "^1.6.1",
+    "png-to-ico": "^3.0.2"
   },
   "build": {
     "appId": "com.noteflow.app",
     "productName": "NoteFlow",
     "copyright": "Copyright © 2026 NoteFlow",
+    "icon": "build-assets/icon.png",
     "directories": {
       "output": "release"
     },
@@ -38,7 +43,9 @@
     ],
     "forceCodeSigning": false,
     "win": {
+      "icon": "build-assets/icon.ico",
       "sign": null,
+      "signAndEditExecutable": false,
       "target": [
         {
           "target": "nsis",

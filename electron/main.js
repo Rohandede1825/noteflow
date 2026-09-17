@@ -59,6 +59,7 @@ async function createWindow() {
     minWidth: 960,
     minHeight: 600,
     title: 'NoteFlow',
+    icon: path.join(__dirname, 'assets/icon.png'),
     backgroundColor: '#17181C',
     autoHideMenuBar: true,
     show: false,
