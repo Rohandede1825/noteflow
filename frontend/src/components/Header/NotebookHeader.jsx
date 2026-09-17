@@ -262,13 +262,19 @@ export function NotebookHeader() {
 
             {/* Text */}
             <button
-              onClick={() => setActiveTool('text')}
+              onClick={() => {
+                if (activeTool === 'text') {
+                  setActivePopup(activePopup === 'text' ? null : 'text');
+                } else {
+                  setActiveTool('text');
+                }
+              }}
               className={`p-2.5 rounded-xl transition-all ${
                 activeTool === 'text'
                   ? 'bg-[#E3EDFC] text-[#204272] shadow-sm font-bold'
                   : 'text-white/85 hover:text-white hover:bg-white/10'
               }`}
-              title="Text Box (T)"
+              title="Text Box (T) - Click to customize font & size"
             >
               <Type className="w-[19px] h-[19px]" />
             </button>
@@ -301,13 +307,19 @@ export function NotebookHeader() {
 
             {/* Shapes */}
             <button
-              onClick={() => setActiveTool('shapes')}
+              onClick={() => {
+                if (activeTool === 'shapes') {
+                  setActivePopup(activePopup === 'shapes' ? null : 'shapes');
+                } else {
+                  setActiveTool('shapes');
+                }
+              }}
               className={`p-2.5 rounded-xl transition-all ${
                 activeTool === 'shapes'
                   ? 'bg-[#E3EDFC] text-[#204272] shadow-sm font-bold'
                   : 'text-white/85 hover:text-white hover:bg-white/10'
               }`}
-              title="Shapes (R)"
+              title="Shapes (R) - Click to customize shapes, lines & colors"
             >
               <Shapes className="w-[19px] h-[19px]" />
             </button>

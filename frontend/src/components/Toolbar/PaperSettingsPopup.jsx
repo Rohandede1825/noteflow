@@ -90,7 +90,7 @@ export function PaperSettingsPopup() {
             <div className="grid grid-cols-3 gap-2">
               {[
                 { id: 'white', label: 'White', bg: '#FFFFFF', border: '#D1D5DB', text: '#111827' },
-                { id: 'dark', label: 'Dark', bg: '#202124', border: '#374151', text: '#F9FAFB' },
+                { id: 'dark', label: 'Dark', bg: '#262729', border: '#374151', text: '#F9FAFB' },
                 { id: 'cream', label: 'Cream', bg: '#FDFBF7', border: '#E5E7EB', text: '#1F2937' }
               ].map((c) => {
                 const isSelected = paperColor === c.id;

@@ -120,6 +120,9 @@ export function CanvasEngine() {
     return { offsets, totalHeight };
   }, [pages]);
 
+  const { offsets, totalHeight } = getPageOffsets();
+  const maxPageWidth = Math.max(...pages.map(p => p.width || 1200), 1200);
+
   // Convert screen coordinates to specific page index and page-relative (x, y) with 100% exact pixel precision
   const screenToPageCoordinates = useCallback((clientX, clientY) => {
     const stackWrapper = stackWrapperRef.current;
@@ -129,11 +132,11 @@ export function CanvasEngine() {
     const docX = (clientX - rect.left) / zoomLevel;
     const docY = (clientY - rect.top) / zoomLevel;
 
-    const { offsets } = getPageOffsets();
+    const { offsets: pageOffsets } = getPageOffsets();
     let targetIdx = 0;
 
-    for (let i = 0; i < offsets.length; i++) {
-      const p = offsets[i];
+    for (let i = 0; i < pageOffsets.length; i++) {
+      const p = pageOffsets[i];
       if (docY >= p.top && docY <= p.top + p.height + PAGE_GAP) {
         targetIdx = i;
         break;
@@ -144,7 +147,7 @@ export function CanvasEngine() {
     }
 
     targetIdx = Math.max(0, Math.min(pages.length - 1, targetIdx));
-    const pageOffset = offsets[targetIdx] || { top: 0, height: 1600, width: 1200 };
+    const pageOffset = pageOffsets[targetIdx] || { top: 0, height: 1600, width: 1200 };
     const pageRelativeX = docX;
     const pageRelativeY = docY - pageOffset.top;
 
@@ -159,8 +162,8 @@ export function CanvasEngine() {
 
   // Scroll to a specific page smoothly
   const scrollToPage = useCallback((index) => {
-    const { offsets } = getPageOffsets();
-    const target = offsets[index];
+    const { offsets: pageOffsets } = getPageOffsets();
+    const target = pageOffsets[index];
     if (!target) return;
 
     const desiredPanY = -(target.top * zoomLevel) + 40;
@@ -762,8 +765,6 @@ export function CanvasEngine() {
   };
 
   const currentNum = currentPageIndex + 1;
-  const { totalHeight } = getPageOffsets();
-  const maxPageWidth = Math.max(...pages.map(p => p.width || 1200), 1200);
 
   return (
     <div

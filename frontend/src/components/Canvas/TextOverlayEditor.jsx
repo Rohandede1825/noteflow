@@ -40,12 +40,10 @@ export function TextOverlayEditor({ textState, onComplete, onCancel }) {
 
   return (
     <div
-      className="absolute z-40 bg-neutral-900/90 border border-blue-500 rounded-xl shadow-floating p-2 animate-in fade-in zoom-in-95 duration-100"
+      className="relative z-40 bg-[#1e2024]/95 backdrop-blur-md border-2 border-[#2F6BFF] rounded-xl shadow-floating p-2.5 animate-in fade-in zoom-in-95 duration-100"
       style={{
-        left: `${textState.x}px`,
-        top: `${textState.y}px`,
-        minWidth: '240px',
-        maxWidth: '600px'
+        minWidth: '260px',
+        maxWidth: '650px'
       }}
     >
       <textarea

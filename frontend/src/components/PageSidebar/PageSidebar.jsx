@@ -87,16 +87,21 @@ export function PageSidebar() {
           </div>
         ) : (
           displayedPages.map((page, index) => {
-            const actualIndex = pages.findIndex(p => (p._id === page._id || p.id === page.id));
-            const isActive = actualIndex === currentPageIndex;
+            const pageKey = page._id || page.id;
+            const actualIndex = pageKey
+              ? pages.findIndex(p => (p._id === pageKey || p.id === pageKey))
+              : (filterTab === 'all' ? index : pages.indexOf(page));
+            
+            const resolvedIndex = actualIndex !== -1 ? actualIndex : index;
+            const isActive = resolvedIndex === currentPageIndex;
 
             return (
               <PageThumbnail
-                key={page._id || page.id || index}
+                key={pageKey || `page-idx-${resolvedIndex}`}
                 page={page}
-                pageIndex={actualIndex}
+                pageIndex={resolvedIndex}
                 isActive={isActive}
-                onSelect={() => setCurrentPageIndex(actualIndex)}
+                onSelect={() => setCurrentPageIndex(resolvedIndex, true)}
                 onDuplicate={duplicatePage}
                 onDelete={deletePage}
                 onToggleBookmark={toggleBookmark}

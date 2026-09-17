@@ -6,9 +6,9 @@
 export const PAPER_PRESETS = {
   dark: {
     name: 'Dark',
-    backgroundColor: '#282a2d', // Exact Goodnotes dark page background
-    lineColor: '#3e4147',       // Subtle ruled line color
-    marginLineColor: 'transparent', // Goodnotes dark ruled template does not display vertical red line by default
+    backgroundColor: '#262729', // Exact Goodnotes dark page background from reference screenshot
+    lineColor: '#3b3d42',       // Clean subtle ruled line color
+    marginLineColor: 'transparent', // Goodnotes dark ruled template has clean full-width lines
     dotColor: '#45484f'
   },
   white: {
