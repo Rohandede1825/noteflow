@@ -29,7 +29,9 @@ exports.getNotebooks = async (req, res, next) => {
 
     return res.json({ success: true, count: notebooks.length, data: notebooks });
   } catch (error) {
-    next(error);
+    console.warn('[Notebook Controller] DB getNotebooks failed, using fallback:', error.message);
+    const notebooks = fallbackStore.getNotebooks(req.query || {});
+    return res.json({ success: true, count: notebooks.length, data: notebooks });
   }
 };
 
@@ -53,15 +55,17 @@ exports.getNotebookById = async (req, res, next) => {
     });
 
     if (!notebook) {
+      const fallback = fallbackStore.getNotebookById(id);
+      if (fallback) return res.json({ success: true, data: fallback });
       return res.status(404).json({ success: false, message: 'Notebook not found' });
     }
 
     return res.json({ success: true, data: notebook });
   } catch (error) {
-    // If not a valid mongo ID, try fallback store
+    console.warn('[Notebook Controller] DB getNotebookById failed, using fallback:', error.message);
     const fallback = fallbackStore.getNotebookById(req.params.id);
     if (fallback) return res.json({ success: true, data: fallback });
-    next(error);
+    return res.status(404).json({ success: false, message: 'Notebook not found' });
   }
 };
 
@@ -107,7 +111,9 @@ exports.createNotebook = async (req, res, next) => {
     const populated = await Notebook.findById(notebook._id).populate('pages');
     return res.status(201).json({ success: true, data: populated });
   } catch (error) {
-    next(error);
+    console.warn('[Notebook Controller] DB createNotebook failed, using fallback:', error.message);
+    const fallback = fallbackStore.createNotebook(req.body);
+    return res.status(201).json({ success: true, data: fallback });
   }
 };
 
@@ -138,7 +144,7 @@ exports.updateNotebook = async (req, res, next) => {
   } catch (error) {
     const fallback = fallbackStore.updateNotebook(req.params.id, req.body);
     if (fallback) return res.json({ success: true, data: fallback });
-    next(error);
+    return res.status(404).json({ success: false, message: 'Notebook not found' });
   }
 };
 
@@ -167,7 +173,7 @@ exports.deleteNotebook = async (req, res, next) => {
   } catch (error) {
     const fallback = fallbackStore.deleteNotebook(req.params.id, req.query.permanent === 'true');
     if (fallback) return res.json({ success: true, message: 'Deleted' });
-    next(error);
+    return res.status(404).json({ success: false, message: 'Notebook not found' });
   }
 };
 
@@ -185,6 +191,8 @@ exports.duplicateNotebook = async (req, res, next) => {
 
     const original = await Notebook.findById(id).populate('pages');
     if (!original) {
+      const fallback = fallbackStore.duplicateNotebook(id);
+      if (fallback) return res.status(201).json({ success: true, data: fallback });
       return res.status(404).json({ success: false, message: 'Notebook not found' });
     }
 
@@ -219,7 +227,10 @@ exports.duplicateNotebook = async (req, res, next) => {
     const populated = await Notebook.findById(newNotebook._id).populate('pages');
     return res.status(201).json({ success: true, data: populated });
   } catch (error) {
-    next(error);
+    console.warn('[Notebook Controller] DB duplicateNotebook failed, using fallback:', error.message);
+    const fallback = fallbackStore.duplicateNotebook(req.params.id);
+    if (fallback) return res.status(201).json({ success: true, data: fallback });
+    return res.status(404).json({ success: false, message: 'Notebook not found' });
   }
 };
 
@@ -234,6 +245,10 @@ exports.exportNoteFlow = async (req, res, next) => {
       notebook = fallbackStore.getNotebookById(id);
     } else {
       notebook = await Notebook.findById(id).populate('pages');
+    }
+
+    if (!notebook) {
+      notebook = fallbackStore.getNotebookById(id);
     }
 
     if (!notebook) {
@@ -259,6 +274,16 @@ exports.exportNoteFlow = async (req, res, next) => {
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(notebook.title)}.noteflow"`);
     return res.json(bundle);
   } catch (error) {
+    const fallback = fallbackStore.getNotebookById(req.params.id);
+    if (fallback) {
+      return res.json({
+        version: 1,
+        format: 'noteflow',
+        exportedAt: new Date().toISOString(),
+        notebook: fallback,
+        pages: fallback.pages
+      });
+    }
     next(error);
   }
 };
@@ -309,6 +334,8 @@ exports.importNoteFlow = async (req, res, next) => {
     const populated = await Notebook.findById(newNotebook._id).populate('pages');
     return res.status(201).json({ success: true, data: populated });
   } catch (error) {
-    next(error);
+    console.warn('[Notebook Controller] DB importNoteFlow failed, using fallback:', error.message);
+    const imported = fallbackStore.importNoteFlow(req.body);
+    return res.status(201).json({ success: true, data: imported });
   }
 };

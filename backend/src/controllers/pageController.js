@@ -65,6 +65,8 @@ exports.createPage = async (req, res, next) => {
 
     const notebook = await Notebook.findById(notebookId);
     if (!notebook) {
+      const newPage = fallbackStore.createPage(notebookId, req.body);
+      if (newPage) return res.status(201).json({ success: true, data: newPage });
       return res.status(404).json({ success: false, message: 'Notebook not found' });
     }
 
@@ -89,7 +91,10 @@ exports.createPage = async (req, res, next) => {
 
     return res.status(201).json({ success: true, data: page });
   } catch (error) {
-    next(error);
+    console.warn('[Page Controller] DB createPage failed, using fallback:', error.message);
+    const newPage = fallbackStore.createPage(req.params.notebookId, req.body);
+    if (newPage) return res.status(201).json({ success: true, data: newPage });
+    return res.status(404).json({ success: false, message: 'Notebook not found' });
   }
 };
 
@@ -122,7 +127,7 @@ exports.updatePage = async (req, res, next) => {
   } catch (error) {
     const fallback = fallbackStore.updatePage(req.params.id, req.body);
     if (fallback) return res.json({ success: true, data: fallback });
-    next(error);
+    return res.status(404).json({ success: false, message: 'Page not found' });
   }
 };
 
@@ -162,7 +167,9 @@ exports.deletePage = async (req, res, next) => {
 
     return res.json({ success: true, message: 'Page deleted successfully' });
   } catch (error) {
-    next(error);
+    const fallback = fallbackStore.deletePage(req.params.id);
+    if (fallback) return res.json({ success: true, message: 'Page deleted successfully' });
+    return res.status(404).json({ success: false, message: 'Page not found' });
   }
 };
 
@@ -180,6 +187,8 @@ exports.duplicatePage = async (req, res, next) => {
 
     const original = await Page.findById(id);
     if (!original) {
+      const fallback = fallbackStore.duplicatePage(id);
+      if (fallback) return res.status(201).json({ success: true, data: fallback });
       return res.status(404).json({ success: false, message: 'Page not found' });
     }
 
@@ -213,7 +222,9 @@ exports.duplicatePage = async (req, res, next) => {
 
     return res.status(201).json({ success: true, data: newPage });
   } catch (error) {
-    next(error);
+    const fallback = fallbackStore.duplicatePage(req.params.id);
+    if (fallback) return res.status(201).json({ success: true, data: fallback });
+    return res.status(404).json({ success: false, message: 'Page not found' });
   }
 };
 
@@ -245,6 +256,7 @@ exports.reorderPages = async (req, res, next) => {
 
     return res.json({ success: true, message: 'Pages reordered successfully' });
   } catch (error) {
-    next(error);
+    fallbackStore.reorderPages(req.params.notebookId, req.body.orderedPageIds || []);
+    return res.json({ success: true, message: 'Pages reordered successfully' });
   }
 };
