@@ -5,6 +5,10 @@ let rceditModule = require('rcedit');
 const rcedit = rceditModule.rcedit || rceditModule.default || rceditModule;
 
 async function buildDesktop() {
+  try {
+    execSync('taskkill /F /IM NoteFlow.exe /T', { stdio: 'ignore' });
+  } catch (_) {}
+
   console.log('📦 Step 1: Building Frontend with Cloud Render Backend integration...');
   execSync('npm run build:frontend', { stdio: 'inherit', cwd: path.join(__dirname, '..') });
 
