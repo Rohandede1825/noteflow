@@ -59,7 +59,9 @@ async function createWindow() {
     minWidth: 960,
     minHeight: 600,
     title: 'NoteFlow',
-    icon: path.join(__dirname, 'assets/icon.png'),
+    icon: process.platform === 'win32'
+      ? path.join(__dirname, 'assets/icon.ico')
+      : path.join(__dirname, 'assets/icon.png'),
     backgroundColor: '#17181C',
     autoHideMenuBar: true,
     show: false,
@@ -101,6 +103,10 @@ async function createWindow() {
 
 // App lifecycle
 app.whenReady().then(async () => {
+  if (process.platform === 'win32') {
+    app.setAppUserModelId('com.noteflow.app');
+  }
+
   startServer();
   await createWindow();
 
