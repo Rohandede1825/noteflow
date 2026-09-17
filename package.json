@@ -4,10 +4,11 @@
   "description": "NoteFlow — Professional Digital Notebook Software",
   "main": "electron/main.js",
   "scripts": {
+    "build": "cd frontend && npm install && npm run build",
+    "build:frontend": "cd frontend && npm run build",
     "start": "node backend/src/server.js",
     "start:backend": "node backend/src/server.js",
     "start:desktop": "electron .",
-    "build:frontend": "cd frontend && npm run build",
     "pack": "electron-builder --dir",
     "dist": "npm run build:frontend && electron-builder --win nsis portable --x64",
     "dist:fast": "electron-builder --win --x64"
