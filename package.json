@@ -69,7 +69,10 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "NoteFlow"
+      "shortcutName": "NoteFlow",
+      "installerIcon": "build-assets/icon.ico",
+      "uninstallerIcon": "build-assets/icon.ico",
+      "installerHeaderIcon": "build-assets/icon.ico"
     }
   }
 }

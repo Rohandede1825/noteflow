@@ -1,6 +1,7 @@
 const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const { rcedit } = require('rcedit');
 
 async function buildDesktop() {
   try {
@@ -14,6 +15,26 @@ async function buildDesktop() {
   execSync('npx electron-builder --dir', { stdio: 'inherit', cwd: path.join(__dirname, '..') });
 
   const exePath = path.join(__dirname, '../release/win-unpacked/NoteFlow.exe');
+  const iconIco = path.join(__dirname, '../build-assets/icon.ico');
+
+  console.log('🎨 Step 3: Injecting NoteFlow high-res squircle icon into executable...');
+  try {
+    await rcedit(exePath, {
+      icon: iconIco,
+      'file-version': '1.0.0',
+      'product-version': '1.0.0',
+      'version-string': {
+        ProductName: 'NoteFlow',
+        FileDescription: 'NoteFlow Digital Notebook',
+        CompanyName: 'NoteFlow',
+        LegalCopyright: 'Copyright © 2026 NoteFlow'
+      }
+    });
+    console.log('✅ Executable icon and metadata injected successfully!');
+  } catch (err) {
+    console.warn('⚠️ Warning during rcedit:', err.message);
+  }
+
   console.log('\n🎉 NoteFlow Windows Desktop App is fully built and ready!');
   console.log(`📍 Location: ${exePath}`);
 }

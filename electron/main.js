@@ -1,6 +1,11 @@
-const { app, BrowserWindow, Menu, shell } = require('electron');
+const { app, BrowserWindow, Menu, shell, nativeImage } = require('electron');
 const path = require('path');
 const http = require('http');
+
+// Crucial: Set App User Model ID so Windows Taskbar pins, groups, and displays NoteFlow custom icon
+if (process.platform === 'win32') {
+  app.setAppUserModelId('com.noteflow.app');
+}
 
 let mainWindow = null;
 let serverInstance = null;
@@ -53,15 +58,18 @@ function waitForServer(url, timeout = 10000) {
 }
 
 async function createWindow() {
+  const iconPath = process.platform === 'win32'
+    ? path.join(__dirname, 'assets/icon.ico')
+    : path.join(__dirname, 'assets/icon.png');
+  const windowIcon = nativeImage.createFromPath(iconPath);
+
   mainWindow = new BrowserWindow({
     width: 1360,
     height: 880,
     minWidth: 960,
     minHeight: 600,
     title: 'NoteFlow',
-    icon: process.platform === 'win32'
-      ? path.join(__dirname, 'assets/icon.ico')
-      : path.join(__dirname, 'assets/icon.png'),
+    icon: windowIcon,
     backgroundColor: '#17181C',
     autoHideMenuBar: true,
     show: false,
