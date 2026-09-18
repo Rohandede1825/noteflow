@@ -391,17 +391,19 @@ export const useNotebookStore = create((set, get) => ({
 
   // Undo action
   undo: () => {
-    const { undoStack, redoStack, currentPage } = get();
+    const { undoStack, redoStack, currentPage, pages, currentPageIndex } = get();
     if (undoStack.length === 0 || !currentPage) return;
 
     const previousState = undoStack[undoStack.length - 1];
     const newUndoStack = undoStack.slice(0, -1);
     const newRedoStack = [...redoStack, JSON.parse(JSON.stringify(currentPage.elements || []))];
+    const updatedPages = pages.map((p, idx) => idx === currentPageIndex ? { ...p, elements: previousState } : p);
 
     set({
       undoStack: newUndoStack,
       redoStack: newRedoStack,
       currentPage: { ...currentPage, elements: previousState },
+      pages: updatedPages,
       isDirty: true
     });
     get().triggerAutoSave();
@@ -409,17 +411,19 @@ export const useNotebookStore = create((set, get) => ({
 
   // Redo action
   redo: () => {
-    const { undoStack, redoStack, currentPage } = get();
+    const { undoStack, redoStack, currentPage, pages, currentPageIndex } = get();
     if (redoStack.length === 0 || !currentPage) return;
 
     const nextState = redoStack[redoStack.length - 1];
     const newRedoStack = redoStack.slice(0, -1);
     const newUndoStack = [...undoStack, JSON.parse(JSON.stringify(currentPage.elements || []))];
+    const updatedPages = pages.map((p, idx) => idx === currentPageIndex ? { ...p, elements: nextState } : p);
 
     set({
       undoStack: newUndoStack,
       redoStack: newRedoStack,
       currentPage: { ...currentPage, elements: nextState },
+      pages: updatedPages,
       isDirty: true
     });
     get().triggerAutoSave();

@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { useToolStore } from '../../store/useToolStore';
 import { ColorPicker } from '../Common/ColorPicker';
 import { Slider } from '../Common/Slider';
-import { Feather, PenTool, Brush, Edit3 } from 'lucide-react';
+import { Feather, PenTool, Brush, Edit3, Sparkles } from 'lucide-react';
 
 const STROKE_PRESETS = [0.5, 1, 2, 3, 5, 8, 12];
 const OPACITY_PRESETS = [0.25, 0.5, 0.75, 1.0];
@@ -18,7 +18,9 @@ export function PenSettingsPopup() {
     penWidth,
     setPenWidth,
     penOpacity,
-    setPenOpacity
+    setPenOpacity,
+    autoShapeRecognition,
+    setAutoShapeRecognition
   } = useToolStore();
 
   const popupRef = useRef(null);
@@ -141,6 +143,34 @@ export function PenSettingsPopup() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* 5. Auto Shape Recognition Toggle */}
+      <div className="flex items-center justify-between p-2.5 bg-neutral-900/80 rounded-xl border border-neutral-800">
+        <div className="flex items-center gap-2">
+          <div className={`p-1.5 rounded-lg ${autoShapeRecognition ? 'bg-blue-600/30 text-blue-300' : 'bg-neutral-800 text-neutral-400'}`}>
+            <Sparkles className="w-4 h-4" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs font-semibold text-neutral-200">Auto Shape Recognition</span>
+            <span className="text-[10px] text-neutral-400">Clean geometric shapes</span>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setAutoShapeRecognition(!autoShapeRecognition)}
+          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+            autoShapeRecognition ? 'bg-blue-600' : 'bg-neutral-700'
+          }`}
+          role="switch"
+          aria-checked={autoShapeRecognition}
+        >
+          <span
+            className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+              autoShapeRecognition ? 'translate-x-4' : 'translate-x-0'
+            }`}
+          />
+        </button>
       </div>
     </div>
   );

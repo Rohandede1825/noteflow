@@ -55,6 +55,12 @@ export function drawShape(ctx, shape) {
     const cx = x + width_box / 2;
     const cy = y + height_box / 2;
     ctx.ellipse(cx, cy, Math.max(1, rx), Math.max(1, ry), 0, 0, Math.PI * 2);
+  } else if (shapeType === 'diamond') {
+    ctx.moveTo(x + width_box / 2, y);
+    ctx.lineTo(x + width_box, y + height_box / 2);
+    ctx.lineTo(x + width_box / 2, y + height_box);
+    ctx.lineTo(x, y + height_box / 2);
+    ctx.closePath();
   } else if (shapeType === 'triangle') {
     ctx.moveTo(x + width_box / 2, y);
     ctx.lineTo(x + width_box, y + height_box);

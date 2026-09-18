@@ -50,6 +50,7 @@ export const useToolStore = create((set, get) => ({
   penWidth: 2.5,
   penOpacity: 1,
   strokeStrength: 1.0, // 0.3 (Soft) to 2.0 (Strong), default 1.0
+  autoShapeRecognition: true, // Default: ON (Converts rough shapes to clean geometry)
 
   // Highlighter Settings
   highlighterColor: '#FACC15',
@@ -115,6 +116,7 @@ export const useToolStore = create((set, get) => ({
   setPenWidth: (penWidth) => set({ penWidth }),
   setPenOpacity: (penOpacity) => set({ penOpacity }),
   setStrokeStrength: (strokeStrength) => set({ strokeStrength }),
+  setAutoShapeRecognition: (autoShapeRecognition) => set({ autoShapeRecognition }),
 
   // Highlighter updates
   setHighlighterColor: (highlighterColor) => set({ highlighterColor }),

@@ -17,6 +17,7 @@ import {
   getBoundingBox
 } from '../../utils/smoothStroke';
 import { drawShape } from '../../utils/geometry';
+import { recognizeShape } from '../../utils/shapeRecognition';
 import {
   ZoomIn,
   ZoomOut,
@@ -49,6 +50,7 @@ export function CanvasEngine() {
     penWidth,
     penOpacity,
     strokeStrength,
+    autoShapeRecognition,
     highlighterColor,
     highlighterWidth,
     highlighterOpacity,
@@ -413,7 +415,7 @@ export function CanvasEngine() {
 
       // If clicked on canvas background without handle
       const hit = elements.slice().reverse().find(el => {
-        if (el.points && (el.type === 'pen' || el.type === 'pencil' || el.type === 'highlighter' || el.type === 'line')) {
+        if (el.points && (el.type === 'pen' || el.type === 'pencil' || el.type === 'highlighter' || el.type === 'line' || (el.type === 'shape' && el.points.length >= 2))) {
           return isPointNearStroke(pageCoords, el.points, 14);
         }
         if (el.x !== undefined && el.y !== undefined) {
@@ -517,13 +519,13 @@ export function CanvasEngine() {
 
         setPageElements(pageIdx, prev => prev.map(el => {
           if (selectedElementIds.includes(el.id)) {
+            const updated = { ...el };
             if (el.points) {
-              return {
-                ...el,
-                points: el.points.map(p => ({ ...p, x: p.x + dx, y: p.y + dy }))
-              };
+              updated.points = el.points.map(p => ({ ...p, x: p.x + dx, y: p.y + dy }));
             }
-            return { ...el, x: (el.x || 0) + dx, y: (el.y || 0) + dy };
+            if (el.x !== undefined) updated.x = el.x + dx;
+            if (el.y !== undefined) updated.y = el.y + dy;
+            return updated;
           }
           return el;
         }), false);
@@ -709,17 +711,45 @@ export function CanvasEngine() {
       const points = activeStrokePointsRef.current;
       if (points && points.length > 0) {
         const isHl = activeTool === 'highlighter';
-        const newElement = {
-          id: 'elem-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
-          type: isHl ? 'highlighter' : activeTool,
-          penType: isHl ? 'highlighter' : penType,
-          points: [...points],
-          color: isHl ? highlighterColor : penColor,
-          width: isHl ? highlighterWidth : penWidth,
-          opacity: isHl ? highlighterOpacity : penOpacity,
-          strength: strokeStrength
-        };
-        setPageElements(pageIdx, prev => [...prev, newElement], true);
+
+        // Smart Shape Recognition check (active only for Pen tool when enabled)
+        let recognizedShape = null;
+        if (activeTool === 'pen' && autoShapeRecognition) {
+          recognizedShape = recognizeShape(points);
+        }
+
+        if (recognizedShape) {
+          // Replace rough stroke with clean NoteFlow shape object in 1 atomic undo step
+          const newShapeElement = {
+            id: 'elem-shape-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+            type: recognizedShape.type || 'shape',
+            shapeType: recognizedShape.shapeType,
+            x: recognizedShape.x,
+            y: recognizedShape.y,
+            width_box: recognizedShape.width_box,
+            height_box: recognizedShape.height_box,
+            points: recognizedShape.points || null,
+            color: penColor,
+            fillColor: 'transparent',
+            width: penWidth,
+            opacity: penOpacity,
+            isDashed: false
+          };
+          setPageElements(pageIdx, prev => [...prev, newShapeElement], true);
+        } else {
+          // Keep as normal pen / pencil / highlighter handwriting
+          const newElement = {
+            id: 'elem-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+            type: isHl ? 'highlighter' : activeTool,
+            penType: isHl ? 'highlighter' : penType,
+            points: [...points],
+            color: isHl ? highlighterColor : penColor,
+            width: isHl ? highlighterWidth : penWidth,
+            opacity: isHl ? highlighterOpacity : penOpacity,
+            strength: strokeStrength
+          };
+          setPageElements(pageIdx, prev => [...prev, newElement], true);
+        }
       }
       activeStrokePointsRef.current = [];
     } else if (activeTool === 'shapes' || activeTool === 'line') {
@@ -939,7 +969,14 @@ export function CanvasEngine() {
 
   let selectedBounds = null;
   if (selectedElement) {
-    if (selectedElement.points && selectedElement.points.length > 0) {
+    if (selectedElement.type === 'image' || selectedElement.type === 'shape' || selectedElement.type === 'line' || selectedElement.type === 'text' || selectedElement.type === 'emoji') {
+      selectedBounds = {
+        x: selectedElement.x ?? 0,
+        y: selectedElement.y ?? 0,
+        width: selectedElement.width_box !== undefined ? selectedElement.width_box : (selectedElement.type === 'emoji' ? 64 : (selectedElement.type === 'text' ? 140 : 100)),
+        height: selectedElement.height_box !== undefined ? selectedElement.height_box : (selectedElement.type === 'emoji' ? 64 : (selectedElement.type === 'text' ? 40 : 100))
+      };
+    } else if (selectedElement.points && selectedElement.points.length > 0) {
       selectedBounds = getBoundingBox(selectedElement.points);
       selectedBounds.x -= 6;
       selectedBounds.y -= 6;
@@ -949,8 +986,8 @@ export function CanvasEngine() {
       selectedBounds = {
         x: selectedElement.x,
         y: selectedElement.y,
-        width: selectedElement.width_box !== undefined ? selectedElement.width_box : (selectedElement.type === 'emoji' ? 64 : (selectedElement.type === 'text' ? 140 : 100)),
-        height: selectedElement.height_box !== undefined ? selectedElement.height_box : (selectedElement.type === 'emoji' ? 64 : (selectedElement.type === 'text' ? 40 : 100))
+        width: selectedElement.width_box || 100,
+        height: selectedElement.height_box || 100
       };
     }
   }
