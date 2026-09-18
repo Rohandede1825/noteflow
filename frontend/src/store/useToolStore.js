@@ -30,9 +30,19 @@ export const FULL_COLOR_PALETTE = [
 
 export const QUICK_PEN_WIDTHS = [1.5, 2.5, 4.5];
 
+export const LASER_COLORS = [
+  { id: 'red', name: 'Red', hex: '#EF4444' },
+  { id: 'blue', name: 'Blue', hex: '#3B82F6' },
+  { id: 'green', name: 'Green', hex: '#10B981' },
+  { id: 'yellow', name: 'Yellow', hex: '#FBBF24' },
+  { id: 'purple', name: 'Purple', hex: '#A855F7' },
+  { id: 'pink', name: 'Pink', hex: '#EC4899' },
+  { id: 'orange', name: 'Orange', hex: '#F97316' }
+];
+
 export const useToolStore = create((set, get) => ({
-  activeTool: 'pen', // 'select' | 'pen' | 'highlighter' | 'eraser' | 'shapes' | 'line' | 'text' | 'image' | 'laser' | 'pan'
-  activePopup: null, // 'colorPalette' | 'penStyle' | 'shapePicker' | 'eraserSettings' | 'text' | null
+  activeTool: 'pen', // 'select' | 'pen' | 'highlighter' | 'eraser' | 'shapes' | 'line' | 'text' | 'image' | 'emoji' | 'laser' | 'pan'
+  activePopup: null, // 'colorPalette' | 'penStyle' | 'shapePicker' | 'eraserSettings' | 'laserSettings' | 'emojiPicker' | 'text' | null
 
   // Pen Settings
   penType: 'ball', // 'ball' | 'fountain' | 'brush' | 'pencil'
@@ -47,9 +57,9 @@ export const useToolStore = create((set, get) => ({
   highlighterOpacity: 0.4,
 
   // Eraser Settings - DEFAULT: PIXEL / STANDARD ERASER
-  eraserMode: 'pixel', // 'pixel' (standard eraser) | 'stroke' (object eraser)
+  eraserMode: 'pixel', // 'pixel' (standard eraser) | 'object' (object eraser)
   eraserSize: 'medium',
-  eraserRadius: 20,
+  eraserRadius: 18,
 
   // Shapes Settings
   shapeType: 'rectangle', // 'rectangle' | 'circle' | 'line' | 'arrow' | 'triangle' | 'roundedRect'
@@ -78,7 +88,8 @@ export const useToolStore = create((set, get) => ({
   selectedElementIds: [],
   selectionBounds: null,
 
-  // Laser Pointer Trail Points
+  // Laser Pointer Settings & Trail Points
+  laserColor: '#EF4444',
   laserTrail: [],
 
   // 1-Click Action Tool Selection
@@ -113,8 +124,8 @@ export const useToolStore = create((set, get) => ({
   // Eraser updates
   setEraserMode: (eraserMode) => set({ eraserMode }),
   setEraserSize: (eraserSize) => {
-    const radii = { small: 10, medium: 20, large: 36, xlarge: 56 };
-    set({ eraserSize, eraserRadius: radii[eraserSize] || 20 });
+    const radii = { small: 8, medium: 18, large: 32, xlarge: 52 };
+    set({ eraserSize, eraserRadius: radii[eraserSize] || 18 });
   },
 
   // Shape updates
@@ -133,6 +144,8 @@ export const useToolStore = create((set, get) => ({
   setSelectedElementIds: (ids) => set({ selectedElementIds: ids }),
 
   // Laser Pointer Actions
+  setLaserColor: (laserColor) => set({ laserColor }),
+
   addLaserPoint: (point) => {
     const now = Date.now();
     const trail = get().laserTrail;

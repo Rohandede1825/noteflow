@@ -20,6 +20,7 @@ import {
   Eraser,
   Type,
   Smile,
+  Highlighter as HighlighterIcon,
   Image as ImageIcon,
   Shapes,
   FileText,
@@ -33,6 +34,10 @@ export function NotebookHeader() {
   const navigate = useNavigate();
   const {
     currentNotebook,
+    openTabs,
+    closeTab,
+    switchTab,
+    createNewNotebookAndTab,
     pages,
     currentPageIndex,
     addPage,
@@ -48,6 +53,7 @@ export function NotebookHeader() {
     penWidth,
     setPenWidth,
     highlighterColor,
+    laserColor,
     activePopup,
     setActivePopup
   } = useToolStore();
@@ -62,6 +68,12 @@ export function NotebookHeader() {
   const fileInputRef = useRef(null);
 
   const isBookmarked = !!currentPage?.bookmarked;
+  const currentNotebookId = currentNotebook ? (currentNotebook._id || currentNotebook.id) : null;
+
+  // Tabs fallback if openTabs is empty
+  const tabsList = (openTabs && openTabs.length > 0)
+    ? openTabs
+    : (currentNotebook ? [{ id: currentNotebookId, title: currentNotebook.title }] : []);
 
   const handleImageFileChange = async (e) => {
     const file = e.target.files?.[0];
@@ -107,54 +119,77 @@ export function NotebookHeader() {
 
       {/* Row 1: Top Tab Bar & Window Controls */}
       <div className="flex items-center justify-between px-2 pt-1.5 pb-0 bg-[#1a3862] text-white">
-        {/* Left: Home Button + Notebook Tab + Add Tab */}
-        <div className="flex items-end gap-1.5">
+        {/* Left: Home Button + Notebook Tabs + Add Tab Button */}
+        <div className="flex items-end gap-1.5 overflow-x-auto scrollbar-none">
           {/* Home Icon Tab */}
           <button
             onClick={() => navigate('/')}
-            className="flex items-center justify-center w-8 h-7 mb-0.5 rounded-t-lg bg-[#204272]/70 hover:bg-[#204272] text-white/90 hover:text-white transition-colors"
+            className="flex items-center justify-center w-8 h-7 mb-0.5 rounded-t-lg bg-[#204272]/70 hover:bg-[#204272] text-white/90 hover:text-white transition-colors shrink-0"
             title="Return to Library (Home)"
           >
             <Home className="w-4 h-4" />
           </button>
 
-          {/* Active Notebook Tab */}
-          <div className="relative flex items-center gap-2 px-3.5 py-1.5 bg-[#204272] rounded-t-xl text-white font-semibold text-xs border-t border-x border-[#2b558f]/40 shadow-sm max-w-[240px]">
-            <button
-              onClick={() => setIsTitleMenuOpen(!isTitleMenuOpen)}
-              className="flex items-center gap-1.5 truncate text-left hover:text-blue-100 transition-colors"
-              title="Notebook Options"
-            >
-              <span className="truncate">{currentNotebook?.title || 'Untitled Notebook (1)'}</span>
-              <ChevronDown className="w-3.5 h-3.5 text-white/70 shrink-0" />
-            </button>
+          {/* Render Open Notebook Tabs */}
+          {tabsList.map((tab) => {
+            const isActiveTab = tab.id === currentNotebookId;
+            return (
+              <div
+                key={tab.id}
+                className={`relative flex items-center gap-2 px-3 py-1.5 rounded-t-xl text-xs font-semibold border-t border-x transition-all shrink-0 max-w-[220px] ${
+                  isActiveTab
+                    ? 'bg-[#204272] text-white border-[#2b558f]/40 shadow-sm'
+                    : 'bg-[#162f52]/80 text-white/70 hover:text-white hover:bg-[#1a3862] border-transparent'
+                }`}
+              >
+                <button
+                  onClick={() => {
+                    if (isActiveTab) {
+                      setIsTitleMenuOpen(!isTitleMenuOpen);
+                    } else {
+                      switchTab(tab.id, navigate);
+                    }
+                  }}
+                  className="flex items-center gap-1.5 truncate text-left transition-colors"
+                  title={tab.title}
+                >
+                  <span className="truncate">{tab.title || 'Untitled Notebook'}</span>
+                  {isActiveTab && <ChevronDown className="w-3.5 h-3.5 text-white/70 shrink-0" />}
+                </button>
 
-            <button
-              onClick={() => navigate('/')}
-              className="p-0.5 rounded-md hover:bg-white/20 text-white/70 hover:text-white transition-colors ml-1"
-              title="Close Tab"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    closeTab(tab.id, navigate);
+                  }}
+                  className="p-0.5 rounded-md hover:bg-white/20 text-white/60 hover:text-white transition-colors ml-0.5"
+                  title="Close Tab"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
 
-            <TitleMenu
-              isOpen={isTitleMenuOpen}
-              onClose={() => setIsTitleMenuOpen(false)}
-            />
-          </div>
+                {isActiveTab && (
+                  <TitleMenu
+                    isOpen={isTitleMenuOpen}
+                    onClose={() => setIsTitleMenuOpen(false)}
+                  />
+                )}
+              </div>
+            );
+          })}
 
-          {/* Add New Page / Tab Button */}
+          {/* Add New Notebook Tab Button */}
           <button
-            onClick={() => addPage()}
-            className="p-1.5 mb-0.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
-            title="Add Page"
+            onClick={() => createNewNotebookAndTab(navigate)}
+            className="p-1.5 mb-0.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors shrink-0"
+            title="New Notebook (New Tab)"
           >
             <Plus className="w-4 h-4" />
           </button>
         </div>
 
         {/* Right: Window Controls */}
-        <div className="flex items-center gap-2 pr-1 text-white/70">
+        <div className="flex items-center gap-2 pr-1 text-white/70 shrink-0">
           <button className="p-1 hover:text-white transition-colors" title="Minimize">
             <Minus className="w-3.5 h-3.5" />
           </button>
@@ -171,7 +206,7 @@ export function NotebookHeader() {
         </div>
       </div>
 
-      {/* Row 2: Main Toolbar with Slightly Larger Instruments and Colors Component */}
+      {/* Row 2: Main Toolbar with Instruments and Colors Component */}
       <div className="flex items-center justify-between px-3.5 py-2 bg-[#204272] text-white">
         {/* 1. Left Group: Sidebar, Search, Bookmark */}
         <div className="flex items-center gap-1.5 shrink-0">
@@ -210,7 +245,7 @@ export function NotebookHeader() {
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Main Instruments */}
           <div className="flex items-center gap-1 sm:gap-1.5">
-            {/* Lasso */}
+            {/* 1. Lasso / Select */}
             <button
               onClick={() => setActiveTool('select')}
               className={`p-2.5 rounded-xl transition-all ${
@@ -218,12 +253,12 @@ export function NotebookHeader() {
                   ? 'bg-[#E3EDFC] text-[#204272] shadow-sm font-bold'
                   : 'text-white/85 hover:text-white hover:bg-white/10'
               }`}
-              title="Lasso / Select (S)"
+              title="Select / Move / Resize (S)"
             >
               <Lasso className="w-[19px] h-[19px]" />
             </button>
 
-            {/* Pen */}
+            {/* 2. Pen */}
             <button
               data-penstyle-btn
               onClick={() => {
@@ -247,21 +282,29 @@ export function NotebookHeader() {
               />
             </button>
 
-            {/* Eraser */}
+            {/* 3. Eraser */}
             <button
-              onClick={() => setActiveTool('eraser')}
+              data-eraser-btn
+              onClick={() => {
+                if (activeTool === 'eraser') {
+                  setActivePopup(activePopup === 'eraserSettings' ? null : 'eraserSettings');
+                } else {
+                  setActiveTool('eraser');
+                }
+              }}
               className={`p-2.5 rounded-xl transition-all ${
                 activeTool === 'eraser'
                   ? 'bg-[#E3EDFC] text-[#204272] shadow-sm font-bold'
                   : 'text-white/85 hover:text-white hover:bg-white/10'
               }`}
-              title="Eraser (E)"
+              title="Eraser (E) - Click to change size & mode"
             >
               <Eraser className="w-[19px] h-[19px]" />
             </button>
 
-            {/* Text */}
+            {/* 4. Text */}
             <button
+              data-text-btn
               onClick={() => {
                 if (activeTool === 'text') {
                   setActivePopup(activePopup === 'text' ? null : 'text');
@@ -279,7 +322,28 @@ export function NotebookHeader() {
               <Type className="w-[19px] h-[19px]" />
             </button>
 
-            {/* Highlighter / Stickers */}
+            {/* 5. Emoji / Stickers */}
+            <button
+              data-emoji-btn
+              onClick={() => {
+                if (activeTool === 'emoji') {
+                  setActivePopup(activePopup === 'emojiPicker' ? null : 'emojiPicker');
+                } else {
+                  setActiveTool('emoji');
+                  setActivePopup('emojiPicker');
+                }
+              }}
+              className={`p-2.5 rounded-xl transition-all relative flex items-center justify-center ${
+                activeTool === 'emoji' || activePopup === 'emojiPicker'
+                  ? 'bg-[#E3EDFC] text-[#204272] shadow-sm font-bold'
+                  : 'text-white/85 hover:text-white hover:bg-white/10'
+              }`}
+              title="Emoji & Stickers - Insert iPhone-style emojis"
+            >
+              <Smile className="w-[19px] h-[19px]" />
+            </button>
+
+            {/* 6. Highlighter */}
             <button
               onClick={() => setActiveTool('highlighter')}
               className={`p-2.5 rounded-xl transition-all relative flex items-center justify-center ${
@@ -289,14 +353,14 @@ export function NotebookHeader() {
               }`}
               title="Highlighter (H)"
             >
-              <Smile className="w-[19px] h-[19px]" />
+              <HighlighterIcon className="w-[19px] h-[19px]" />
               <span
                 className="absolute bottom-1.5 right-1.5 w-2 h-2 rounded-full border border-black/30 shadow-sm"
                 style={{ backgroundColor: highlighterColor }}
               />
             </button>
 
-            {/* Image */}
+            {/* 7. Image */}
             <button
               onClick={() => fileInputRef.current?.click()}
               className="p-2.5 rounded-xl text-white/85 hover:text-white hover:bg-white/10 transition-colors"
@@ -305,7 +369,7 @@ export function NotebookHeader() {
               <ImageIcon className="w-[19px] h-[19px]" />
             </button>
 
-            {/* Shapes */}
+            {/* 8. Shapes */}
             <button
               onClick={() => {
                 if (activeTool === 'shapes') {
@@ -324,26 +388,37 @@ export function NotebookHeader() {
               <Shapes className="w-[19px] h-[19px]" />
             </button>
 
-            {/* Tape / Paper */}
+            {/* 9. Tape / Paper */}
             <button
               onClick={() => openModal('paperSettings')}
               className="p-2.5 rounded-xl text-white/85 hover:text-white hover:bg-white/10 transition-colors"
-              title="Paper Template & Tape"
+              title="Paper Template & Background"
             >
               <FileText className="w-[19px] h-[19px]" />
             </button>
 
-            {/* Laser Pointer */}
+            {/* 10. Laser Pointer */}
             <button
-              onClick={() => setActiveTool('laser')}
+              data-laser-btn
+              onClick={() => {
+                if (activeTool === 'laser') {
+                  setActivePopup(activePopup === 'laserSettings' ? null : 'laserSettings');
+                } else {
+                  setActiveTool('laser');
+                }
+              }}
               className={`p-2.5 rounded-xl transition-all relative ${
                 activeTool === 'laser'
                   ? 'bg-[#E3EDFC] text-[#204272] shadow-sm font-bold'
                   : 'text-white/85 hover:text-rose-300 hover:bg-white/10'
               }`}
-              title="Laser Pointer (Click & Drag to glow)"
+              title="Laser Pointer - Click to customize laser color"
             >
               <Wand2 className="w-[19px] h-[19px]" />
+              <span
+                className="absolute bottom-1.5 right-1.5 w-2 h-2 rounded-full border border-black/30 shadow-sm"
+                style={{ backgroundColor: laserColor }}
+              />
             </button>
 
             {/* Audio / Mic */}

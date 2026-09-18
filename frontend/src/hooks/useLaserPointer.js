@@ -2,9 +2,24 @@ import { useEffect, useRef } from 'react';
 import { useToolStore } from '../store/useToolStore';
 import { getMidPoint } from '../utils/smoothStroke';
 
+function hexToRgb(hex) {
+  if (!hex) return { r: 239, g: 68, b: 68 };
+  let c = hex.replace('#', '');
+  if (c.length === 3) {
+    c = c.split('').map(char => char + char).join('');
+  }
+  const num = parseInt(c, 16);
+  if (isNaN(num)) return { r: 239, g: 68, b: 68 };
+  return {
+    r: (num >> 16) & 255,
+    g: (num >> 8) & 255,
+    b: num & 255
+  };
+}
+
 /**
  * Ultra-Smooth Laser Pointer Engine
- * Uses continuous cubic Bezier spline interpolation and exponential decay for a glowing, silky red laser trail.
+ * Uses continuous cubic Bezier spline interpolation and exponential decay for a glowing, silky multi-color laser trail.
  */
 export function useLaserPointer(laserCanvasRef, width = 1200, height = 1600) {
   const animFrameRef = useRef(null);
@@ -28,14 +43,17 @@ export function useLaserPointer(laserCanvasRef, width = 1200, height = 1600) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, width, height);
 
-      const points = useToolStore.getState().laserTrail;
+      const state = useToolStore.getState();
+      const points = state.laserTrail;
+      const laserColor = state.laserColor || '#EF4444';
+      const rgb = hexToRgb(laserColor);
       const now = Date.now();
 
       if (points.length >= 2) {
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
 
-        // 1. Outer vivid red neon glow
+        // 1. Outer vivid neon glow
         for (let i = 0; i < points.length - 1; i++) {
           const p1 = points[i];
           const p2 = points[i + 1];
@@ -47,16 +65,16 @@ export function useLaserPointer(laserCanvasRef, width = 1200, height = 1600) {
           const prevMid = i === 0 ? p1 : getMidPoint(points[i - 1], p1);
 
           ctx.beginPath();
-          ctx.strokeStyle = `rgba(255, 30, 30, ${life * 0.45})`;
+          ctx.strokeStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${life * 0.45})`;
           ctx.lineWidth = Math.max(2, 14 * life);
-          ctx.shadowColor = '#ff0000';
+          ctx.shadowColor = laserColor;
           ctx.shadowBlur = 12 * life;
           ctx.moveTo(prevMid.x, prevMid.y);
           ctx.quadraticCurveTo(p1.x, p1.y, mid.x, mid.y);
           ctx.stroke();
         }
 
-        // 2. Focused scarlet core beam
+        // 2. Focused core beam
         for (let i = 0; i < points.length - 1; i++) {
           const p1 = points[i];
           const p2 = points[i + 1];
@@ -68,9 +86,9 @@ export function useLaserPointer(laserCanvasRef, width = 1200, height = 1600) {
           const prevMid = i === 0 ? p1 : getMidPoint(points[i - 1], p1);
 
           ctx.beginPath();
-          ctx.strokeStyle = `rgba(255, 10, 30, ${life * 0.95})`;
+          ctx.strokeStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${life * 0.95})`;
           ctx.lineWidth = Math.max(1.5, 5 * life);
-          ctx.shadowColor = '#ff1133';
+          ctx.shadowColor = laserColor;
           ctx.shadowBlur = 6 * life;
           ctx.moveTo(prevMid.x, prevMid.y);
           ctx.quadraticCurveTo(p1.x, p1.y, mid.x, mid.y);
@@ -104,14 +122,14 @@ export function useLaserPointer(laserCanvasRef, width = 1200, height = 1600) {
 
           ctx.beginPath();
           ctx.arc(latest.x, latest.y, 7 * headLife, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(255, 0, 0, ${0.5 * headLife})`;
-          ctx.shadowColor = '#ff0000';
+          ctx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${0.5 * headLife})`;
+          ctx.shadowColor = laserColor;
           ctx.shadowBlur = 10;
           ctx.fill();
 
           ctx.beginPath();
           ctx.arc(latest.x, latest.y, 3.5 * headLife, 0, Math.PI * 2);
-          ctx.fillStyle = '#ff1133';
+          ctx.fillStyle = laserColor;
           ctx.fill();
 
           ctx.beginPath();

@@ -14,7 +14,7 @@ import {
 
 export function RightClickMenu() {
   const { contextMenu, closeContextMenu, openModal } = useUIStore();
-  const { undo, redo, clearCurrentPage, duplicatePage, addPage } = useNotebookStore();
+  const { undo, redo, duplicatePage, addPage } = useNotebookStore();
   const { setActiveTool } = useToolStore();
   const menuRef = useRef(null);
 
@@ -25,10 +25,20 @@ export function RightClickMenu() {
       }
     };
 
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        closeContextMenu();
+      }
+    };
+
     if (contextMenu.isOpen) {
       document.addEventListener('mousedown', handleOutsideClick);
+      document.addEventListener('keydown', handleKeyDown);
     }
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, [contextMenu.isOpen, closeContextMenu]);
 
   if (!contextMenu.isOpen) return null;
@@ -37,7 +47,7 @@ export function RightClickMenu() {
     <div
       ref={menuRef}
       style={{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }}
-      className="fixed z-50 w-52 bg-[#1e2126]/95 backdrop-blur-xl border border-neutral-700/80 rounded-2xl shadow-floating p-1.5 flex flex-col gap-0.5 text-xs text-neutral-200 animate-in fade-in zoom-in-95 duration-100"
+      className="fixed z-50 w-52 bg-[#1e2126]/95 backdrop-blur-xl border border-neutral-700/80 rounded-2xl shadow-floating p-1.5 flex flex-col gap-0.5 text-xs text-neutral-200 animate-in fade-in zoom-in-95 duration-100 select-none"
     >
       <button
         onClick={() => {
@@ -111,10 +121,8 @@ export function RightClickMenu() {
 
       <button
         onClick={() => {
-          if (window.confirm('Clear all drawings and notes on this page?')) {
-            clearCurrentPage();
-          }
           closeContextMenu();
+          openModal('clearPageConfirm', { pageIndex: contextMenu.pageIndex });
         }}
         className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-rose-400 hover:bg-rose-500/10 transition-colors"
       >

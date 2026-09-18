@@ -12,6 +12,7 @@
     "open:desktop": "powershell Start-Process release/win-unpacked/NoteFlow.exe",
     "open:installer": "cmd /c release\\NoteFlow-Setup.bat",
     "build:installer": "node scripts/build-desktop.js && node scripts/create-installer.js",
+    "build:msix": "node scripts/build-msix.js",
     "pack": "node scripts/build-desktop.js",
     "build:desktop": "node scripts/build-desktop.js",
     "build:zip": "node scripts/build-desktop.js && powershell Compress-Archive -Path release/win-unpacked/* -DestinationPath release/NoteFlow-Windows-x64.zip -Force",
@@ -19,6 +20,17 @@
   },
   "author": "NoteFlow",
   "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.3.0",
+    "helmet": "^7.1.0",
+    "mongoose": "^8.4.1",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^9.0.1"
+  },
   "devDependencies": {
     "electron": "^28.3.3",
     "electron-builder": "^24.13.3",
@@ -32,7 +44,8 @@
     "copyright": "Copyright © 2026 NoteFlow",
     "icon": "build-assets/icon.png",
     "directories": {
-      "output": "release"
+      "output": "release",
+      "buildResources": "build-assets"
     },
     "files": [
       "electron/**/*",
@@ -73,6 +86,18 @@
       "installerIcon": "build-assets/icon.ico",
       "uninstallerIcon": "build-assets/icon.ico",
       "installerHeaderIcon": "build-assets/icon.ico"
+    },
+    "appx": {
+      "identityName": "com.noteflow.app",
+      "publisher": "CN=NoteFlow",
+      "publisherDisplayName": "NoteFlow",
+      "applicationId": "com.noteflow.app",
+      "displayName": "NoteFlow",
+      "backgroundColor": "#17181C",
+      "showNameOnTiles": true,
+      "languages": [
+        "en-US"
+      ]
     }
   }
 }

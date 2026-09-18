@@ -15,6 +15,7 @@ import { ShareModal } from '../components/Modals/ShareModal';
 import { SearchModal } from '../components/Modals/SearchModal';
 import { SettingsModal } from '../components/Modals/SettingsModal';
 import { ImportPdfModal } from '../components/Modals/ImportPdfModal';
+import { ClearPageConfirmModal } from '../components/Modals/ClearPageConfirmModal';
 import { PaperSettingsPopup } from '../components/Toolbar/PaperSettingsPopup';
 import { Loader2 } from 'lucide-react';
 
@@ -79,6 +80,7 @@ export function NotebookPage() {
       <SearchModal />
       <SettingsModal />
       <ImportPdfModal />
+      <ClearPageConfirmModal />
       <PaperSettingsPopup />
     </div>
   );

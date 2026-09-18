@@ -2,10 +2,26 @@ import { create } from 'zustand';
 import { api } from '../services/api';
 
 const MAX_HISTORY = 40;
+const OPEN_TABS_KEY = 'noteflow_open_tabs_v1';
+
+function getStoredOpenTabs() {
+  try {
+    const raw = localStorage.getItem(OPEN_TABS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (_) {}
+  return [];
+}
+
+function saveStoredOpenTabs(tabs) {
+  try {
+    localStorage.setItem(OPEN_TABS_KEY, JSON.stringify(tabs));
+  } catch (_) {}
+}
 
 export const useNotebookStore = create((set, get) => ({
   notebooks: [],
   currentNotebook: null,
+  openTabs: getStoredOpenTabs(),
   pages: [],
   currentPageIndex: 0,
   currentPage: null,
@@ -33,6 +49,94 @@ export const useNotebookStore = create((set, get) => ({
     }
   },
 
+  // Add a notebook to open tabs
+  addOpenTab: (notebook) => {
+    if (!notebook) return;
+    const nbId = notebook._id || notebook.id;
+    const { openTabs } = get();
+    if (!openTabs.some(t => t.id === nbId)) {
+      const nextTabs = [...openTabs, { id: nbId, title: notebook.title || 'Untitled Notebook' }];
+      saveStoredOpenTabs(nextTabs);
+      set({ openTabs: nextTabs });
+    }
+  },
+
+  // Close an open tab
+  closeTab: async (notebookId, navigate) => {
+    const { openTabs, currentNotebook, isDirty } = get();
+    if (isDirty) {
+      await get().saveCurrentPageNow();
+    }
+
+    const nextTabs = openTabs.filter(t => t.id !== notebookId);
+    saveStoredOpenTabs(nextTabs);
+    set({ openTabs: nextTabs });
+
+    const currentId = currentNotebook ? (currentNotebook._id || currentNotebook.id) : null;
+    if (currentId === notebookId) {
+      if (nextTabs.length > 0) {
+        const nextActive = nextTabs[nextTabs.length - 1];
+        if (navigate) {
+          navigate(`/notebook/${nextActive.id}`);
+        } else {
+          get().setCurrentNotebook(nextActive.id);
+        }
+      } else {
+        set({ currentNotebook: null, pages: [], currentPage: null });
+        if (navigate) navigate('/');
+      }
+    }
+  },
+
+  // Switch to a different tab
+  switchTab: async (notebookId, navigate) => {
+    const { currentNotebook, isDirty } = get();
+    const currentId = currentNotebook ? (currentNotebook._id || currentNotebook.id) : null;
+    if (currentId === notebookId) return;
+
+    if (isDirty) {
+      await get().saveCurrentPageNow();
+    }
+
+    if (navigate) {
+      navigate(`/notebook/${notebookId}`);
+    } else {
+      await get().setCurrentNotebook(notebookId);
+    }
+  },
+
+  // Create a brand new independent notebook and open it in a new tab
+  createNewNotebookAndTab: async (navigate) => {
+    try {
+      const { notebooks, isDirty } = get();
+      if (isDirty) {
+        await get().saveCurrentPageNow();
+      }
+
+      const count = notebooks.length + 1;
+      const newNotebook = await api.createNotebook({
+        title: `Untitled Notebook (${count})`,
+        cover: 'classic-dark',
+        theme: 'dark',
+        pageTemplate: 'ruled'
+      });
+
+      if (newNotebook) {
+        const nbId = newNotebook._id || newNotebook.id;
+        get().addOpenTab(newNotebook);
+        await get().fetchNotebooks();
+        if (navigate) {
+          navigate(`/notebook/${nbId}`);
+        } else {
+          await get().setCurrentNotebook(newNotebook);
+        }
+        return newNotebook;
+      }
+    } catch (err) {
+      console.error('Failed to create new notebook tab:', err);
+    }
+  },
+
   // Set active notebook and load pages
   setCurrentNotebook: async (notebookOrId) => {
     try {
@@ -44,9 +148,22 @@ export const useNotebookStore = create((set, get) => ({
 
       const pages = notebook.pages || [];
       const firstPage = pages[0] || null;
+      const nbId = notebook._id || notebook.id;
+
+      // Update open tabs list
+      const { openTabs } = get();
+      let nextTabs = openTabs;
+      const exists = openTabs.some(t => t.id === nbId);
+      if (!exists) {
+        nextTabs = [...openTabs, { id: nbId, title: notebook.title || 'Untitled Notebook' }];
+      } else {
+        nextTabs = openTabs.map(t => t.id === nbId ? { ...t, title: notebook.title || t.title } : t);
+      }
+      saveStoredOpenTabs(nextTabs);
 
       set({
         currentNotebook: notebook,
+        openTabs: nextTabs,
         pages: pages,
         currentPageIndex: 0,
         currentPage: firstPage,
@@ -308,22 +425,53 @@ export const useNotebookStore = create((set, get) => ({
     get().triggerAutoSave();
   },
 
-  // Clear current page elements
-  clearCurrentPage: () => {
-    const { currentPage, undoStack } = get();
-    if (!currentPage) return;
+  // Clear specific page elements or current page elements
+  clearSpecificPage: async (pageIndex) => {
+    const { pages, currentPageIndex, undoStack } = get();
+    const targetIdx = (pageIndex !== undefined && pageIndex >= 0 && pageIndex < pages.length)
+      ? pageIndex
+      : currentPageIndex;
+    const targetPage = pages[targetIdx];
+    if (!targetPage) return;
 
-    const currentElements = currentPage.elements || [];
-    if (currentElements.length === 0) return;
+    const currentElements = targetPage.elements || [];
+    const updatedPages = pages.map((p, idx) => idx === targetIdx ? { ...p, elements: [] } : p);
+    const updatedCurrent = targetIdx === currentPageIndex ? updatedPages[targetIdx] : get().currentPage;
 
-    const newUndo = [...undoStack, JSON.parse(JSON.stringify(currentElements))];
+    const newUndo = targetIdx === currentPageIndex
+      ? [...undoStack, JSON.parse(JSON.stringify(currentElements))].slice(-MAX_HISTORY)
+      : undoStack;
+
     set({
       undoStack: newUndo,
-      redoStack: [],
-      currentPage: { ...currentPage, elements: [] },
-      isDirty: true
+      redoStack: targetIdx === currentPageIndex ? [] : get().redoStack,
+      pages: updatedPages,
+      currentPage: updatedCurrent,
+      isDirty: false,
+      saveStatus: 'saved'
     });
-    get().triggerAutoSave();
+
+    const pageId = targetPage._id || targetPage.id;
+    if (pageId) {
+      try {
+        await api.updatePage(pageId, {
+          elements: [],
+          title: targetPage.title,
+          template: targetPage.template,
+          templateConfig: targetPage.templateConfig,
+          pdfBackground: targetPage.pdfBackground,
+          bookmarked: targetPage.bookmarked
+        });
+      } catch (err) {
+        console.warn('Failed to persist cleared page state:', err);
+      }
+    }
+  },
+
+  // Clear current page elements
+  clearCurrentPage: () => {
+    const { currentPageIndex } = get();
+    get().clearSpecificPage(currentPageIndex);
   },
 
   // Debounced Autosave (2.5s)

@@ -77,6 +77,10 @@ body {
 }
 
 /* Tool cursors */
+.cursor-select {
+  cursor: default;
+}
+
 .cursor-pen {
   cursor: crosshair;
 }
@@ -86,15 +90,27 @@ body {
 }
 
 .cursor-eraser {
-  cursor: cell;
+  cursor: none;
+}
+
+.cursor-none {
+  cursor: none !important;
 }
 
 .cursor-laser {
-  cursor: default;
+  cursor: crosshair;
 }
 
 .cursor-text {
   cursor: text;
+}
+
+.cursor-emoji {
+  cursor: pointer;
+}
+
+.cursor-shapes, .cursor-line {
+  cursor: crosshair;
 }
 
 .cursor-pan {

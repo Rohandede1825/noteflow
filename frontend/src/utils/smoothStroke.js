@@ -255,3 +255,63 @@ export function getBoundingBox(points) {
     height: Math.max(0, maxY - minY)
   };
 }
+
+/**
+ * Checks if a bounding box (x, y, width, height) intersects with eraser sweep between p1 and p2
+ */
+export function isBoxInEraserSweep(box, p1, p2, eraserRadius = 20) {
+  const { x = 0, y = 0, width = 100, height = 100 } = box;
+  const minX = Math.min(x, x + width);
+  const maxX = Math.max(x, x + width);
+  const minY = Math.min(y, y + height);
+  const maxY = Math.max(y, y + height);
+
+  // Check if either eraser endpoint is inside the expanded box
+  const isP1Inside = p1.x >= minX - eraserRadius && p1.x <= maxX + eraserRadius &&
+                     p1.y >= minY - eraserRadius && p1.y <= maxY + eraserRadius;
+  if (isP1Inside) return true;
+
+  const isP2Inside = p2.x >= minX - eraserRadius && p2.x <= maxX + eraserRadius &&
+                     p2.y >= minY - eraserRadius && p2.y <= maxY + eraserRadius;
+  if (isP2Inside) return true;
+
+  // Check the 4 box boundary segments
+  const tl = { x: minX, y: minY };
+  const tr = { x: maxX, y: minY };
+  const br = { x: maxX, y: maxY };
+  const bl = { x: minX, y: maxY };
+
+  if (isSegmentInEraserSweep(tl, tr, p1, p2, eraserRadius)) return true;
+  if (isSegmentInEraserSweep(tr, br, p1, p2, eraserRadius)) return true;
+  if (isSegmentInEraserSweep(br, bl, p1, p2, eraserRadius)) return true;
+  if (isSegmentInEraserSweep(bl, tl, p1, p2, eraserRadius)) return true;
+
+  return false;
+}
+
+/**
+ * Checks if ANY page element (stroke, shape, image, text, emoji) intersects with eraser sweep
+ */
+export function doesElementIntersectEraser(el, p1, p2, eraserRadius = 20) {
+  if (!el) return false;
+
+  // 1. Strokes & Lines with points
+  if (el.points && el.points.length > 0) {
+    if (doesStrokeIntersectEraser(el.points, p1, p2, eraserRadius)) {
+      return true;
+    }
+  }
+
+  // 2. Box elements (Images, Shapes, Text, Emojis)
+  if (el.x !== undefined && el.y !== undefined) {
+    const box = {
+      x: el.x,
+      y: el.y,
+      width: el.width_box !== undefined ? el.width_box : (el.width || (el.type === 'emoji' ? 60 : (el.type === 'text' ? 140 : 100))),
+      height: el.height_box !== undefined ? el.height_box : (el.height || (el.type === 'emoji' ? 60 : (el.type === 'text' ? 40 : 100)))
+    };
+    return isBoxInEraserSweep(box, p1, p2, eraserRadius);
+  }
+
+  return false;
+}

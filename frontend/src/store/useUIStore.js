@@ -25,6 +25,7 @@ export const useUIStore = create((set, get) => ({
     y: 0,
     canvasX: 0,
     canvasY: 0,
+    pageIndex: null,
     targetElementId: null
   },
 
@@ -117,6 +118,7 @@ export const useUIStore = create((set, get) => ({
       y: coords.y,
       canvasX: coords.canvasX,
       canvasY: coords.canvasY,
+      pageIndex: coords.pageIndex !== undefined ? coords.pageIndex : null,
       targetElementId: coords.targetElementId || null
     }
   }),

@@ -94,9 +94,15 @@ export function CanvasEngine() {
   const isCreatingPageRef = useRef(false);
   const [pullDownAmount, setPullDownAmount] = useState(0);
 
-  // Dragging selected elements state
+  // Dragging & Resizing selected elements state
   const isDraggingSelectedRef = useRef(false);
+  const isResizingSelectedRef = useRef(false);
+  const activeResizeHandleRef = useRef(null);
   const dragStartCoordsRef = useRef(null);
+  const resizeInitialBoxRef = useRef(null);
+
+  // Eraser cursor position state (Smooth 0ms tracking)
+  const [eraserCursorPos, setEraserCursorPos] = useState({ x: -100, y: -100, isOver: false });
 
   // Inline text editing state
   const [editingText, setEditingText] = useState(null);
@@ -275,7 +281,7 @@ export function CanvasEngine() {
   ]);
 
   // -------------------------------------------------------------
-  // Standard Precision Pixel Eraser with Continuous Stroke Splitting
+  // Universal Eraser Action — Erases Pen strokes, shapes, lines, images, text, emojis
   // -------------------------------------------------------------
   const handleEraserAction = (pageIndex, p1, p2) => {
     const targetPage = pages[pageIndex];
@@ -283,31 +289,23 @@ export function CanvasEngine() {
     const elements = targetPage.elements || [];
     if (elements.length === 0) return;
 
-    if (eraserMode === 'object') {
-      const remaining = elements.filter(el => {
-        if (el.points && el.points.length > 0) {
+    let hasMutated = false;
+    const updatedElements = [];
+
+    for (let i = 0; i < elements.length; i++) {
+      const el = elements[i];
+
+      // 1. Freehand Pen, Pencil, and Highlighter strokes
+      if (el.points && (el.type === 'pen' || el.type === 'pencil' || el.type === 'highlighter')) {
+        if (eraserMode === 'object') {
           if (doesStrokeIntersectEraser(el.points, p1, p2, eraserRadius)) {
-            return false;
+            hasMutated = true;
+            continue; // Remove entire stroke
+          } else {
+            updatedElements.push(el);
           }
-        } else if (el.x !== undefined && el.width_box !== undefined) {
-          const center = { x: el.x + el.width_box / 2, y: el.y + el.height_box / 2 };
-          if (isPointInEraserSweep(center, p1, p2, eraserRadius + Math.max(el.width_box, el.height_box) / 2)) {
-            return false;
-          }
-        }
-        return true;
-      });
-
-      if (remaining.length !== elements.length) {
-        setPageElements(pageIndex, remaining, true);
-      }
-    } else {
-      let hasMutated = false;
-      const updatedElements = [];
-
-      for (let i = 0; i < elements.length; i++) {
-        const el = elements[i];
-        if (el.points && (el.type === 'pen' || el.type === 'pencil' || el.type === 'highlighter')) {
+        } else {
+          // Pixel mode: split/trim stroke segments touched by eraser capsule
           const isAnyTouched = el.points.some(pt => isPointInEraserSweep(pt, p1, p2, eraserRadius));
           if (!isAnyTouched) {
             updatedElements.push(el);
@@ -342,19 +340,26 @@ export function CanvasEngine() {
               });
             }
           });
+        }
+      } else {
+        // 2. Objects: Shapes, Lines, Images, Text, Emojis
+        const doesHit = doesElementIntersectEraser(el, p1, p2, eraserRadius);
+        if (doesHit) {
+          hasMutated = true;
+          continue; // Object is erased
         } else {
           updatedElements.push(el);
         }
       }
+    }
 
-      if (hasMutated) {
-        setPageElements(pageIndex, updatedElements, false);
-      }
+    if (hasMutated) {
+      setPageElements(pageIndex, updatedElements, false);
     }
   };
 
   // -------------------------------------------------------------
-  // Pointer Down Handler (Captures genuine Pentab/Stylus pressure)
+  // Pointer Down Handler
   // -------------------------------------------------------------
   const handlePointerDown = (e) => {
     if (e.button === 2) return;
@@ -385,31 +390,34 @@ export function CanvasEngine() {
       return;
     }
 
+    // Text Tool: Click to create text box
     if (activeTool === 'text') {
       setEditingText({
         pageIndex,
         x,
         y,
-        initialText: ''
+        initialText: '',
+        isNew: true
       });
       isDrawingRef.current = false;
       return;
     }
 
+    // Select Tool: Hit test elements
     if (activeTool === 'select') {
+      // Check if clicked a resize handle
       const targetPage = pages[pageIndex];
       const elements = targetPage?.elements || [];
+
+      // If clicked on canvas background without handle
       const hit = elements.slice().reverse().find(el => {
-        if (el.points) {
+        if (el.points && (el.type === 'pen' || el.type === 'pencil' || el.type === 'highlighter' || el.type === 'line')) {
           return isPointNearStroke(pageCoords, el.points, 14);
         }
-        if (el.x !== undefined && el.width_box !== undefined) {
-          return (
-            x >= el.x &&
-            x <= el.x + (el.width_box || 100) &&
-            y >= el.y &&
-            y <= el.y + (el.height_box || 60)
-          );
+        if (el.x !== undefined && el.y !== undefined) {
+          const w = el.width_box !== undefined ? el.width_box : (el.type === 'emoji' ? 60 : (el.type === 'text' ? 140 : 100));
+          const h = el.height_box !== undefined ? el.height_box : (el.type === 'emoji' ? 60 : (el.type === 'text' ? 40 : 100));
+          return x >= el.x && x <= el.x + w && y >= el.y && y <= el.y + h;
         }
         return false;
       });
@@ -459,9 +467,14 @@ export function CanvasEngine() {
   };
 
   // -------------------------------------------------------------
-  // Pointer Move Handler (Instant 0ms latency hardware stylus sampling)
+  // Pointer Move Handler
   // -------------------------------------------------------------
   const handlePointerMove = (e) => {
+    // Update circular eraser position
+    if (activeTool === 'eraser') {
+      setEraserCursorPos({ x: e.clientX, y: e.clientY, isOver: true });
+    }
+
     if (isMiddleClickPanningRef.current || (isPanning && isDrawingRef.current)) {
       setPanOffset({
         x: e.clientX - panStartRef.current.x,
@@ -483,7 +496,7 @@ export function CanvasEngine() {
       return;
     }
 
-    if (!isDrawingRef.current) return;
+    if (!isDrawingRef.current && !isResizingSelectedRef.current) return;
 
     const rawEvents = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
 
@@ -494,6 +507,7 @@ export function CanvasEngine() {
       const coords = { x, y, pressure };
       const pageIdx = activePageIndexRef.current;
 
+      // Handle dragging selected element
       if (isDraggingSelectedRef.current && dragStartCoordsRef.current) {
         const dx = coords.x - dragStartCoordsRef.current.x;
         const dy = coords.y - dragStartCoordsRef.current.y;
@@ -508,6 +522,67 @@ export function CanvasEngine() {
               };
             }
             return { ...el, x: (el.x || 0) + dx, y: (el.y || 0) + dy };
+          }
+          return el;
+        }), false);
+        continue;
+      }
+
+      // Handle resizing selected element
+      if (isResizingSelectedRef.current && resizeInitialBoxRef.current && dragStartCoordsRef.current) {
+        const handle = activeResizeHandleRef.current;
+        const init = resizeInitialBoxRef.current;
+        const dx = coords.x - dragStartCoordsRef.current.x;
+        const dy = coords.y - dragStartCoordsRef.current.y;
+
+        let newX = init.x;
+        let newY = init.y;
+        let newW = init.width_box;
+        let newH = init.height_box;
+
+        if (handle.includes('e')) newW = Math.max(20, init.width_box + dx);
+        if (handle.includes('s')) newH = Math.max(20, init.height_box + dy);
+        if (handle.includes('w')) {
+          const clampedDx = Math.min(dx, init.width_box - 20);
+          newX = init.x + clampedDx;
+          newW = init.width_box - clampedDx;
+        }
+        if (handle.includes('n')) {
+          const clampedDy = Math.min(dy, init.height_box - 20);
+          newY = init.y + clampedDy;
+          newH = init.height_box - clampedDy;
+        }
+
+        // For image / emoji, lock aspect ratio
+        if (init.type === 'image' || init.type === 'emoji') {
+          const ratio = (init.width_box || 1) / (init.height_box || 1);
+          if (handle === 'se' || handle === 'nw') {
+            newH = newW / ratio;
+          } else if (handle === 'ne' || handle === 'sw') {
+            newH = newW / ratio;
+          }
+        }
+
+        setPageElements(pageIdx, prev => prev.map(el => {
+          if (selectedElementIds.includes(el.id)) {
+            if (el.type === 'emoji') {
+              const scale = newW / (init.width_box || 60);
+              return {
+                ...el,
+                x: newX,
+                y: newY,
+                width_box: newW,
+                height_box: newH,
+                fontSize: Math.max(16, Math.round((init.fontSize || 54) * scale))
+              };
+            }
+            return {
+              ...el,
+              x: newX,
+              y: newY,
+              width_box: newW,
+              height_box: newH
+            };
           }
           return el;
         }), false);
@@ -572,9 +647,17 @@ export function CanvasEngine() {
 
     lastLaserCoordsRef.current = null;
 
+    if (isDraggingSelectedRef.current || isResizingSelectedRef.current) {
+      isDraggingSelectedRef.current = false;
+      isResizingSelectedRef.current = false;
+      activeResizeHandleRef.current = null;
+      resizeInitialBoxRef.current = null;
+      dragStartCoordsRef.current = null;
+      useNotebookStore.getState().triggerAutoSave();
+    }
+
     if (!isDrawingRef.current) return;
     isDrawingRef.current = false;
-    isDraggingSelectedRef.current = false;
     prevEraserCoordsRef.current = null;
 
     // Clear active in-flight scratch canvas
@@ -720,19 +803,37 @@ export function CanvasEngine() {
 
   const handleContextMenu = (e) => {
     e.preventDefault();
-    const { x, y } = screenToPageCoordinates(e.clientX, e.clientY);
+    const { pageIndex, x, y } = screenToPageCoordinates(e.clientX, e.clientY);
     openContextMenu({
       x: e.clientX,
       y: e.clientY,
       canvasX: x,
-      canvasY: y
+      canvasY: y,
+      pageIndex: pageIndex
     });
   };
+
+  const handleDeleteSelected = useCallback(() => {
+    if (selectedElementIds.length > 0) {
+      const targetPage = pages[currentPageIndex];
+      if (targetPage) {
+        const remaining = (targetPage.elements || []).filter(el => !selectedElementIds.includes(el.id));
+        setPageElements(currentPageIndex, remaining, true);
+        setSelectedElementIds([]);
+      }
+    }
+  }, [selectedElementIds, currentPageIndex, pages, setPageElements, setSelectedElementIds]);
 
   useEffect(() => {
     const onKeyDown = (e) => {
       if (e.code === 'Space' && !e.repeat && e.target.tagName.toLowerCase() !== 'textarea' && e.target.tagName.toLowerCase() !== 'input') {
         isSpacePressedRef.current = true;
+      }
+      if ((e.key === 'Delete' || e.key === 'Backspace') && activeTool === 'select' && selectedElementIds.length > 0) {
+        if (e.target.tagName.toLowerCase() !== 'textarea' && e.target.tagName.toLowerCase() !== 'input') {
+          e.preventDefault();
+          handleDeleteSelected();
+        }
       }
     };
     const onKeyUp = (e) => {
@@ -747,35 +848,101 @@ export function CanvasEngine() {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
     };
-  }, [setIsPanning]);
+  }, [setIsPanning, activeTool, selectedElementIds, handleDeleteSelected]);
 
   const handleCompleteText = (textValue) => {
     if (textValue && textValue.trim() && editingText) {
-      const newTextElement = {
-        id: 'elem-text-' + Date.now(),
-        type: 'text',
-        x: editingText.x,
-        y: editingText.y,
-        text: textValue.trim(),
-        ...useToolStore.getState().textSettings
-      };
-      setPageElements(editingText.pageIndex, prev => [...prev, newTextElement], true);
+      if (editingText.id) {
+        // Update existing text
+        setPageElements(editingText.pageIndex, prev => prev.map(el => {
+          if (el.id === editingText.id) {
+            return {
+              ...el,
+              text: textValue.trim()
+            };
+          }
+          return el;
+        }), true);
+      } else {
+        // Create new text
+        const newTextElement = {
+          id: 'elem-text-' + Date.now(),
+          type: 'text',
+          x: editingText.x,
+          y: editingText.y,
+          text: textValue.trim(),
+          width_box: Math.max(120, textValue.trim().length * 12),
+          height_box: (textValue.split('\n').length || 1) * 28,
+          ...useToolStore.getState().textSettings
+        };
+        setPageElements(editingText.pageIndex, prev => [...prev, newTextElement], true);
+      }
     }
     setEditingText(null);
   };
 
+  const handleResizeStart = (e, handle, el, bounds) => {
+    e.stopPropagation();
+    try {
+      e.target.setPointerCapture?.(e.pointerId);
+    } catch (_) {}
+    const { x, y } = screenToPageCoordinates(e.clientX, e.clientY);
+    isResizingSelectedRef.current = true;
+    activeResizeHandleRef.current = handle;
+    dragStartCoordsRef.current = { x, y };
+    resizeInitialBoxRef.current = {
+      x: bounds.x,
+      y: bounds.y,
+      width_box: bounds.width,
+      height_box: bounds.height,
+      type: el.type,
+      fontSize: el.fontSize || 54
+    };
+  };
+
   const currentNum = currentPageIndex + 1;
+
+  // Selected element bounding box
+  const selectedElement = (activeTool === 'select' && selectedElementIds.length > 0)
+    ? (pages[currentPageIndex]?.elements || []).find(el => el.id === selectedElementIds[0])
+    : null;
+
+  let selectedBounds = null;
+  if (selectedElement) {
+    if (selectedElement.points && selectedElement.points.length > 0) {
+      selectedBounds = getBoundingBox(selectedElement.points);
+      selectedBounds.x -= 6;
+      selectedBounds.y -= 6;
+      selectedBounds.width += 12;
+      selectedBounds.height += 12;
+    } else if (selectedElement.x !== undefined && selectedElement.y !== undefined) {
+      selectedBounds = {
+        x: selectedElement.x,
+        y: selectedElement.y,
+        width: selectedElement.width_box !== undefined ? selectedElement.width_box : (selectedElement.type === 'emoji' ? 64 : (selectedElement.type === 'text' ? 140 : 100)),
+        height: selectedElement.height_box !== undefined ? selectedElement.height_box : (selectedElement.type === 'emoji' ? 64 : (selectedElement.type === 'text' ? 40 : 100))
+      };
+    }
+  }
+
+  const isEraserActive = activeTool === 'eraser';
 
   return (
     <div
       ref={containerRef}
       onWheel={handleWheel}
       onContextMenu={handleContextMenu}
+      onPointerEnter={() => setEraserCursorPos(prev => ({ ...prev, isOver: true }))}
+      onPointerLeave={() => setEraserCursorPos(prev => ({ ...prev, isOver: false }))}
       className={`relative flex-1 w-full h-full overflow-hidden select-none bg-[#141517] ${
-        isSpacePressedRef.current || isPanning ? 'cursor-panning' : `cursor-${activeTool}`
+        isSpacePressedRef.current || isPanning
+          ? 'cursor-panning'
+          : isEraserActive
+          ? 'cursor-none'
+          : `cursor-${activeTool}`
       }`}
     >
-      {/* Continuous Multi-Page Vertical Stack Wrapper (Exact 0-Padding 1:1 Pixel Alignment) */}
+      {/* Continuous Multi-Page Vertical Stack Wrapper */}
       <div
         ref={stackWrapperRef}
         style={{
@@ -804,19 +971,82 @@ export function CanvasEngine() {
             pageIndex={idx}
             isActive={idx === currentPageIndex}
             isDarkMode={isDarkMode}
-            selectedElementIds={idx === currentPageIndex ? selectedElementIds : []}
             dpr={dpr}
           />
         ))}
 
-        {/* Global Live Active In-Flight Scratch Layer (100% exact 1:1 pixel alignment) */}
+        {/* Global Live Active In-Flight Scratch Layer */}
         <canvas
           ref={inFlightCanvasRef}
           className="absolute inset-0 pointer-events-none rounded-sm z-20"
         />
 
-        {/* Laser Pointer Animation Layer across the document stack */}
+        {/* Laser Pointer Animation Layer */}
         <LaserLayer width={maxPageWidth} height={totalHeight} />
+
+        {/* Interactive Selection Transformer Box with Resize Handles */}
+        {activeTool === 'select' && selectedBounds && selectedElement && (
+          <div
+            style={{
+              position: 'absolute',
+              top: `${(getPageOffsets().offsets[currentPageIndex]?.top || 0) + selectedBounds.y}px`,
+              left: `${selectedBounds.x}px`,
+              width: `${selectedBounds.width}px`,
+              height: `${selectedBounds.height}px`,
+              pointerEvents: 'none',
+              zIndex: 35
+            }}
+            className="border-2 border-[#2F6BFF] border-dashed rounded-sm"
+          >
+            {/* Quick Action Badge (Delete & Edit) */}
+            <div className="absolute -top-9 right-0 flex items-center gap-1 pointer-events-auto bg-[#1e2025]/95 border border-neutral-700/80 rounded-lg p-1 shadow-floating">
+              {selectedElement.type === 'text' && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingText({
+                      pageIndex: currentPageIndex,
+                      x: selectedElement.x,
+                      y: selectedElement.y,
+                      initialText: selectedElement.text,
+                      id: selectedElement.id
+                    });
+                  }}
+                  className="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-600/30 text-blue-300 hover:bg-blue-600/50 transition-colors"
+                >
+                  Edit
+                </button>
+              )}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteSelected();
+                }}
+                className="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-600/30 text-rose-300 hover:bg-rose-600/50 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+
+            {/* 8 Resize Handles */}
+            {[
+              { id: 'nw', style: 'top-[-5px] left-[-5px] cursor-nwse-resize' },
+              { id: 'n',  style: 'top-[-5px] left-1/2 -translate-x-1/2 cursor-ns-resize' },
+              { id: 'ne', style: 'top-[-5px] right-[-5px] cursor-nesw-resize' },
+              { id: 'e',  style: 'top-1/2 -translate-y-1/2 right-[-5px] cursor-ew-resize' },
+              { id: 'se', style: 'bottom-[-5px] right-[-5px] cursor-nwse-resize' },
+              { id: 's',  style: 'bottom-[-5px] left-1/2 -translate-x-1/2 cursor-ns-resize' },
+              { id: 'sw', style: 'bottom-[-5px] left-[-5px] cursor-nesw-resize' },
+              { id: 'w',  style: 'top-1/2 -translate-y-1/2 left-[-5px] cursor-ew-resize' }
+            ].map(h => (
+              <div
+                key={h.id}
+                onPointerDown={(e) => handleResizeStart(e, h.id, selectedElement, selectedBounds)}
+                className={`absolute w-3 h-3 bg-white border-2 border-[#2F6BFF] rounded-sm pointer-events-auto shadow-sm hover:scale-125 transition-transform ${h.style}`}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Force-Down / Add Next Page Bottom Section */}
         <div className="w-full flex flex-col items-center justify-center py-6 gap-2 text-white/70">
@@ -853,6 +1083,26 @@ export function CanvasEngine() {
           </div>
         )}
       </div>
+
+      {/* Floating Circular Eraser Cursor (Exact Size & Transparent View) */}
+      {isEraserActive && eraserCursorPos.isOver && (
+        <div
+          style={{
+            position: 'fixed',
+            top: `${eraserCursorPos.y}px`,
+            left: `${eraserCursorPos.x}px`,
+            width: `${eraserRadius * zoomLevel * 2}px`,
+            height: `${eraserRadius * zoomLevel * 2}px`,
+            transform: 'translate(-50%, -50%)',
+            pointerEvents: 'none',
+            borderRadius: '50%',
+            border: '1.5px solid rgba(255, 255, 255, 0.95)',
+            boxShadow: '0 0 0 1px rgba(0, 0, 0, 0.65), inset 0 0 0 1px rgba(0, 0, 0, 0.25)',
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            zIndex: 9999
+          }}
+        />
+      )}
 
       {/* Page Indicator Pill (Bottom-Left: 1 of N) */}
       <div className="absolute bottom-5 left-5 z-30 flex items-center gap-1.5 px-3.5 py-1 bg-[#1c1d20]/90 backdrop-blur-md border border-white/10 rounded-full shadow-floating text-xs font-semibold text-white/90">
