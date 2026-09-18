@@ -95,11 +95,9 @@ export function NotebookHeader() {
           opacity: 1
         };
 
-        const { currentPage: cp, setElements } = useNotebookStore.getState();
-        if (cp) {
-          setElements([...(cp.elements || []), newImageElement]);
-          useUIStore.getState().addToast('Image added to page', 'success');
-        }
+        const { currentPageIndex: cpi, setPageElements } = useNotebookStore.getState();
+        setPageElements(cpi, prev => [...prev, newImageElement], true);
+        useUIStore.getState().addToast('Image added to page', 'success');
       };
       img.src = src;
     };
@@ -345,13 +343,20 @@ export function NotebookHeader() {
 
             {/* 6. Highlighter */}
             <button
-              onClick={() => setActiveTool('highlighter')}
+              data-highlighter-btn
+              onClick={() => {
+                if (activeTool === 'highlighter') {
+                  setActivePopup(activePopup === 'highlighterSettings' ? null : 'highlighterSettings');
+                } else {
+                  setActiveTool('highlighter');
+                }
+              }}
               className={`p-2.5 rounded-xl transition-all relative flex items-center justify-center ${
                 activeTool === 'highlighter'
                   ? 'bg-[#E3EDFC] text-[#204272] shadow-sm font-bold'
                   : 'text-white/85 hover:text-white hover:bg-white/10'
               }`}
-              title="Highlighter (H)"
+              title="Highlighter (H) - Click to customize color, size & intensity"
             >
               <HighlighterIcon className="w-[19px] h-[19px]" />
               <span

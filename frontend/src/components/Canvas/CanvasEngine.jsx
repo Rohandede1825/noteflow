@@ -12,7 +12,9 @@ import {
   isPointNearStroke,
   doesStrokeIntersectEraser,
   isPointInEraserSweep,
-  getPointDistance
+  getPointDistance,
+  doesElementIntersectEraser,
+  getBoundingBox
 } from '../../utils/smoothStroke';
 import { drawShape } from '../../utils/geometry';
 import {
@@ -574,6 +576,34 @@ export function CanvasEngine() {
                 width_box: newW,
                 height_box: newH,
                 fontSize: Math.max(16, Math.round((init.fontSize || 54) * scale))
+              };
+            }
+            if (el.type === 'text') {
+              const scale = newW / (init.width_box || 120);
+              return {
+                ...el,
+                x: newX,
+                y: newY,
+                width_box: newW,
+                height_box: newH,
+                fontSize: Math.max(12, Math.round((init.fontSize || 18) * Math.min(3, Math.max(0.4, scale))))
+              };
+            }
+            if (el.type === 'shape' || el.type === 'line') {
+              let updatedPoints = el.points;
+              if (el.points && el.points.length >= 2) {
+                updatedPoints = [
+                  { x: newX, y: newY },
+                  { x: newX + newW, y: newY + newH }
+                ];
+              }
+              return {
+                ...el,
+                x: newX,
+                y: newY,
+                width_box: newW,
+                height_box: newH,
+                points: updatedPoints
               };
             }
             return {

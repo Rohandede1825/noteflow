@@ -7,6 +7,7 @@ import { TextSettingsPopup } from './TextSettingsPopup';
 import { EraserSettingsPopup } from './EraserSettingsPopup';
 import { LaserSettingsPopup } from './LaserSettingsPopup';
 import { EmojiPickerPopup } from './EmojiPickerPopup';
+import { HighlighterSettingsPopup } from './HighlighterSettingsPopup';
 import {
   Undo2,
   Redo2
@@ -62,6 +63,7 @@ export function TopToolbar() {
       <TextSettingsPopup />
       <LaserSettingsPopup />
       <EmojiPickerPopup />
+      <HighlighterSettingsPopup />
     </>
   );
 }

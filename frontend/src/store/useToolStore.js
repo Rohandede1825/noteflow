@@ -52,9 +52,9 @@ export const useToolStore = create((set, get) => ({
   strokeStrength: 1.0, // 0.3 (Soft) to 2.0 (Strong), default 1.0
 
   // Highlighter Settings
-  highlighterColor: 'rgba(250, 204, 21, 0.38)',
+  highlighterColor: '#FACC15',
   highlighterWidth: 24,
-  highlighterOpacity: 0.4,
+  highlighterOpacity: 0.45,
 
   // Eraser Settings - DEFAULT: PIXEL / STANDARD ERASER
   eraserMode: 'pixel', // 'pixel' (standard eraser) | 'object' (object eraser)

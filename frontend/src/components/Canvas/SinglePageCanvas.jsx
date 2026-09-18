@@ -210,7 +210,7 @@ function SinglePageCanvasComponent({
       <canvas
         ref={hlCanvasRef}
         className="absolute inset-0 pointer-events-none rounded-sm z-15"
-        style={{ mixBlendMode: 'multiply', opacity: 0.9 }}
+        style={{ mixBlendMode: isDarkMode ? 'screen' : 'multiply', opacity: isDarkMode ? 0.85 : 0.95 }}
       />
 
       {/* 4. Pen Drawing Inks Layer */}
