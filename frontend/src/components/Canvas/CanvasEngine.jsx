@@ -23,7 +23,8 @@ import {
   ZoomOut,
   ChevronDown,
   Plus,
-  ArrowDown
+  ArrowDown,
+  Maximize2
 } from 'lucide-react';
 
 const PAGE_GAP = 32;
@@ -98,12 +99,21 @@ export function CanvasEngine() {
   const isCreatingPageRef = useRef(false);
   const [pullDownAmount, setPullDownAmount] = useState(0);
 
+  // Stylus Right-Click / Barrel-button Drag Panning & Touch Multi-Touch
+  const isRightClickPanningRef = useRef(false);
+  const didRightClickPanRef = useRef(false);
+  const activeTouchesRef = useRef(new Map());
+  const pinchStateRef = useRef(null);
+
   // Dragging & Resizing selected elements state
   const isDraggingSelectedRef = useRef(false);
   const isResizingSelectedRef = useRef(false);
   const activeResizeHandleRef = useRef(null);
   const dragStartCoordsRef = useRef(null);
   const resizeInitialBoxRef = useRef(null);
+
+  // Live Pen Hover / Writing Nib Pointer for Students & Presentations
+  const [penPointerPos, setPenPointerPos] = useState({ x: -100, y: -100, isOver: false, isDrawing: false, pressure: 0.5, tool: 'pen' });
 
   // Eraser cursor position state (Smooth 0ms tracking)
   const [eraserCursorPos, setEraserCursorPos] = useState({ x: -100, y: -100, isOver: false });
@@ -368,13 +378,55 @@ export function CanvasEngine() {
   // Pointer Down Handler
   // -------------------------------------------------------------
   const handlePointerDown = (e) => {
-    if (e.button === 2) return;
+    // 1. Stylus Right-Click / Pen Barrel Button: Instant Slide & Reposition
+    const isRightClick = e.button === 2 || (e.buttons & 2);
+    if (isRightClick) {
+      const targetElement = e.currentTarget || stackWrapperRef.current;
+      if (targetElement && typeof targetElement.setPointerCapture === 'function') {
+        try {
+          targetElement.setPointerCapture(e.pointerId);
+        } catch (_) {}
+      }
+      isRightClickPanningRef.current = true;
+      panStartRef.current = { x: e.clientX - panOffset.x, y: e.clientY - panOffset.y };
+      didRightClickPanRef.current = false;
+      if (e.cancelable) e.preventDefault();
+      return;
+    }
 
+    // 2. Middle-click, Space Pressed, or Hand/Pan Tool
     if (isSpacePressedRef.current || e.button === 1 || activeTool === 'pan') {
       setIsPanning(true);
       isMiddleClickPanningRef.current = true;
       panStartRef.current = { x: e.clientX - panOffset.x, y: e.clientY - panOffset.y };
+      const targetElement = e.currentTarget || stackWrapperRef.current;
+      if (targetElement && typeof targetElement.setPointerCapture === 'function') {
+        try {
+          targetElement.setPointerCapture(e.pointerId);
+        } catch (_) {}
+      }
       return;
+    }
+
+    // 3. Multi-Touch Pinch & Slide Handling for Tablets / Touch Screens
+    if (e.pointerType === 'touch') {
+      activeTouchesRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (activeTouchesRef.current.size === 2) {
+        isDrawingRef.current = false;
+        activeStrokePointsRef.current = [];
+        const touches = Array.from(activeTouchesRef.current.values());
+        const dist = Math.hypot(touches[0].x - touches[1].x, touches[0].y - touches[1].y);
+        const centerX = (touches[0].x + touches[1].x) / 2;
+        const centerY = (touches[0].y + touches[1].y) / 2;
+        pinchStateRef.current = {
+          initialDist: Math.max(dist, 1),
+          initialZoom: zoomLevel,
+          centerX,
+          centerY,
+          initialPan: { ...panOffset }
+        };
+        return;
+      }
     }
 
     // Set pointer capture on the element that has listeners
@@ -405,6 +457,16 @@ export function CanvasEngine() {
 
     isDrawingRef.current = true;
     activePageIndexRef.current = pageIndex;
+
+    // Update live pen pointer dot
+    setPenPointerPos({
+      x: e.clientX,
+      y: e.clientY,
+      isOver: true,
+      isDrawing: true,
+      pressure,
+      tool: activeTool
+    });
 
     // Laser Pointer: ONLY record on click and drag with genuine coordinates
     if (activeTool === 'laser') {
@@ -474,17 +536,60 @@ export function CanvasEngine() {
   // Pointer Move Handler
   // -------------------------------------------------------------
   const handlePointerMove = (e) => {
+    // 1. Live Stylus / Pen Nib Pointer tracking for audience/students
+    const isPenHoverTool = activeTool === 'pen' || activeTool === 'pencil' || activeTool === 'highlighter';
+    if (isPenHoverTool) {
+      setPenPointerPos({
+        x: e.clientX,
+        y: e.clientY,
+        isOver: true,
+        isDrawing: isDrawingRef.current,
+        pressure: (typeof e.pressure === 'number' && e.pressure > 0) ? e.pressure : 0.5,
+        tool: activeTool
+      });
+    }
+
     // Update circular eraser position
     if (activeTool === 'eraser') {
       setEraserCursorPos({ x: e.clientX, y: e.clientY, isOver: true });
     }
 
-    if (isMiddleClickPanningRef.current || (isPanning && isDrawingRef.current)) {
+    // 2. Stylus Right-Click Slide / Middle-Click Pan / Space Pan
+    if (isRightClickPanningRef.current || isMiddleClickPanningRef.current || (isPanning && isDrawingRef.current)) {
+      const nextX = e.clientX - panStartRef.current.x;
+      const nextY = e.clientY - panStartRef.current.y;
+      const moved = Math.abs(e.clientX - (panStartRef.current.x + panOffset.x)) > 3 || Math.abs(e.clientY - (panStartRef.current.y + panOffset.y)) > 3;
+      if (moved) {
+        didRightClickPanRef.current = true;
+      }
       setPanOffset({
-        x: e.clientX - panStartRef.current.x,
-        y: e.clientY - panStartRef.current.y
+        x: nextX,
+        y: nextY
       });
       return;
+    }
+
+    // 3. Multi-Touch Pinch-to-Zoom & Pan Gesture
+    if (e.pointerType === 'touch' && activeTouchesRef.current.has(e.pointerId)) {
+      activeTouchesRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (activeTouchesRef.current.size === 2 && pinchStateRef.current) {
+        const touches = Array.from(activeTouchesRef.current.values());
+        const dist = Math.hypot(touches[0].x - touches[1].x, touches[0].y - touches[1].y);
+        const centerX = (touches[0].x + touches[1].x) / 2;
+        const centerY = (touches[0].y + touches[1].y) / 2;
+        const scale = dist / pinchStateRef.current.initialDist;
+        const newZoom = Math.max(0.2, Math.min(3.0, pinchStateRef.current.initialZoom * scale));
+        
+        const panDeltaX = centerX - pinchStateRef.current.centerX;
+        const panDeltaY = centerY - pinchStateRef.current.centerY;
+        
+        setZoomLevel(newZoom);
+        setPanOffset({
+          x: pinchStateRef.current.initialPan.x + panDeltaX,
+          y: pinchStateRef.current.initialPan.y + panDeltaY
+        });
+        return;
+      }
     }
 
     if (activeTool === 'laser') {
@@ -674,10 +779,23 @@ export function CanvasEngine() {
   // Pointer Up Handler
   // -------------------------------------------------------------
   const handlePointerUp = (e) => {
+    if (isRightClickPanningRef.current) {
+      isRightClickPanningRef.current = false;
+    }
+
     if (isMiddleClickPanningRef.current) {
       isMiddleClickPanningRef.current = false;
       setIsPanning(false);
     }
+
+    if (e.pointerType === 'touch') {
+      activeTouchesRef.current.delete(e.pointerId);
+      if (activeTouchesRef.current.size < 2) {
+        pinchStateRef.current = null;
+      }
+    }
+
+    setPenPointerPos(prev => ({ ...prev, isDrawing: false }));
 
     const targetElement = e.currentTarget || stackWrapperRef.current;
     if (targetElement && typeof targetElement.releasePointerCapture === 'function') {
@@ -893,6 +1011,10 @@ export function CanvasEngine() {
 
   const handleContextMenu = (e) => {
     e.preventDefault();
+    if (didRightClickPanRef.current) {
+      didRightClickPanRef.current = false;
+      return;
+    }
     const { pageIndex, x, y } = screenToPageCoordinates(e.clientX, e.clientY);
     openContextMenu({
       x: e.clientX,
@@ -1024,18 +1146,35 @@ export function CanvasEngine() {
 
   const isEraserActive = activeTool === 'eraser';
 
+  const handleFitToWidth = () => {
+    const container = containerRef.current;
+    if (!container) return;
+    const containerWidth = container.clientWidth || 1000;
+    const maxW = Math.max(...pages.map(p => p.width || 720), 720);
+    const targetZoom = Math.max(0.4, Math.min(2.5, (containerWidth - 60) / maxW));
+    setZoomLevel(targetZoom);
+    setPanOffset({ x: 0, y: 40 });
+  };
+
   return (
     <div
       ref={containerRef}
       onWheel={handleWheel}
       onContextMenu={handleContextMenu}
-      onPointerEnter={() => setEraserCursorPos(prev => ({ ...prev, isOver: true }))}
-      onPointerLeave={() => setEraserCursorPos(prev => ({ ...prev, isOver: false }))}
+      onPointerEnter={() => {
+        setEraserCursorPos(prev => ({ ...prev, isOver: true }));
+        setPenPointerPos(prev => ({ ...prev, isOver: true }));
+      }}
+      onPointerLeave={() => {
+        setEraserCursorPos(prev => ({ ...prev, isOver: false }));
+        setPenPointerPos(prev => ({ ...prev, isOver: false }));
+        isRightClickPanningRef.current = false;
+      }}
       style={{ touchAction: 'none' }}
       className={`relative flex-1 w-full h-full overflow-hidden select-none touch-none bg-[#141517] ${
-        isSpacePressedRef.current || isPanning
-          ? 'cursor-panning'
-          : isEraserActive
+        isSpacePressedRef.current || isPanning || isRightClickPanningRef.current
+          ? 'cursor-grab'
+          : isEraserActive || (penPointerPos.isOver && (activeTool === 'pen' || activeTool === 'pencil' || activeTool === 'highlighter'))
           ? 'cursor-none'
           : `cursor-${activeTool}`
       }`}
@@ -1205,6 +1344,33 @@ export function CanvasEngine() {
         />
       )}
 
+      {/* Student & Presenter Live Pen Nib Pointer Indicator (High Visibility for Classroom/Projector/Stream) */}
+      {penPointerPos.isOver && !isEraserActive && (activeTool === 'pen' || activeTool === 'pencil' || activeTool === 'highlighter') && (
+        <div
+          className="pointer-events-none fixed z-50 rounded-full"
+          style={{
+            left: 0,
+            top: 0,
+            transform: `translate3d(${penPointerPos.x}px, ${penPointerPos.y}px, 0) translate(-50%, -50%)`,
+            width: `${Math.max(10, Math.min(36, (activeTool === 'highlighter' ? highlighterWidth : penWidth) * zoomLevel))}px`,
+            height: `${Math.max(10, Math.min(36, (activeTool === 'highlighter' ? highlighterWidth : penWidth) * zoomLevel))}px`,
+            willChange: 'transform'
+          }}
+        >
+          <div
+            className="w-full h-full rounded-full border border-white/90 shadow-[0_0_8px_rgba(0,0,0,0.6),0_0_2px_rgba(255,255,255,0.9)] flex items-center justify-center transition-all duration-75"
+            style={{
+              backgroundColor: (activeTool === 'highlighter' ? highlighterColor : penColor) + (penPointerPos.isDrawing ? 'dd' : '66'),
+              boxShadow: penPointerPos.isDrawing
+                ? `0 0 10px ${activeTool === 'highlighter' ? highlighterColor : penColor}, 0 0 2px #fff`
+                : '0 0 6px rgba(0,0,0,0.6)'
+            }}
+          >
+            <div className="w-1.5 h-1.5 rounded-full bg-white shadow-sm ring-1 ring-black/40" />
+          </div>
+        </div>
+      )}
+
       {/* Page Indicator Pill (Bottom-Left: 1 of N) */}
       <div className="absolute bottom-5 left-5 z-30 flex items-center gap-1.5 px-3.5 py-1 bg-[#1c1d20]/90 backdrop-blur-md border border-white/10 rounded-full shadow-floating text-xs font-semibold text-white/90">
         <span>{currentNum}</span>
@@ -1212,11 +1378,23 @@ export function CanvasEngine() {
         <span>{totalPages}</span>
       </div>
 
-      {/* Floating Bottom-Right Zoom Controls */}
-      <div className="absolute bottom-5 right-5 z-30 flex items-center gap-1 p-1 bg-[#1c1d20]/90 backdrop-blur-md border border-white/10 rounded-xl shadow-floating text-xs font-semibold text-white/90">
+      {/* Floating Bottom-Right Zoom & View Controls for Stylus/Pen Users */}
+      <div className="absolute bottom-5 right-5 z-30 flex items-center gap-1 p-1 bg-[#1c1d20]/95 backdrop-blur-md border border-white/15 rounded-2xl shadow-floating text-xs font-semibold text-white/90">
+        {/* Fit to Width Button */}
+        <button
+          onClick={handleFitToWidth}
+          className="p-2 rounded-xl hover:bg-white/15 text-white/80 hover:text-white transition-colors"
+          title="Fit Page to Width"
+        >
+          <Maximize2 className="w-4 h-4" />
+        </button>
+
+        <div className="h-4 w-px bg-white/10" />
+
+        {/* Zoom Out */}
         <button
           onClick={() => setZoomLevel(Math.max(0.2, zoomLevel - 0.15))}
-          className="p-1.5 rounded-lg hover:bg-white/15 text-white/80 hover:text-white transition-colors"
+          className="p-2 rounded-xl hover:bg-white/15 text-white/80 hover:text-white transition-colors"
           title="Zoom Out"
         >
           <ZoomOut className="w-4 h-4" />
@@ -1226,7 +1404,7 @@ export function CanvasEngine() {
         <div className="relative">
           <button
             onClick={() => setShowZoomPresets(!showZoomPresets)}
-            className="flex items-center gap-0.5 px-2 py-1 rounded-lg hover:bg-white/15 text-white transition-colors font-mono text-xs"
+            className="flex items-center gap-0.5 px-2.5 py-1.5 rounded-xl hover:bg-white/15 text-white transition-colors font-mono text-xs"
             title="Zoom Presets"
           >
             <span>{Math.round(zoomLevel * 100)}%</span>
@@ -1234,7 +1412,16 @@ export function CanvasEngine() {
           </button>
 
           {showZoomPresets && (
-            <div className="absolute bottom-9 right-0 w-24 bg-[#25262B] border border-white/15 rounded-xl shadow-floating p-1 flex flex-col gap-0.5 text-xs z-50">
+            <div className="absolute bottom-11 right-0 w-28 bg-[#25262B] border border-white/15 rounded-2xl shadow-floating p-1 flex flex-col gap-0.5 text-xs z-50">
+              <button
+                onClick={() => {
+                  handleFitToWidth();
+                  setShowZoomPresets(false);
+                }}
+                className="py-1 px-2.5 rounded-xl text-left text-neutral-300 hover:bg-neutral-800 transition-colors"
+              >
+                Fit Width
+              </button>
               {ZOOM_PRESETS.map((p) => (
                 <button
                   key={p}
@@ -1242,7 +1429,7 @@ export function CanvasEngine() {
                     setZoomLevel(p);
                     setShowZoomPresets(false);
                   }}
-                  className={`py-1 px-2 rounded-lg text-left font-mono transition-colors ${
+                  className={`py-1 px-2.5 rounded-xl text-left font-mono transition-colors ${
                     Math.abs(zoomLevel - p) < 0.05
                       ? 'bg-[#2F6BFF] text-white font-bold'
                       : 'text-neutral-300 hover:bg-neutral-800'
@@ -1255,9 +1442,10 @@ export function CanvasEngine() {
           )}
         </div>
 
+        {/* Zoom In */}
         <button
           onClick={() => setZoomLevel(Math.min(3.0, zoomLevel + 0.15))}
-          className="p-1.5 rounded-lg hover:bg-white/15 text-white/80 hover:text-white transition-colors"
+          className="p-2 rounded-xl hover:bg-white/15 text-white/80 hover:text-white transition-colors"
           title="Zoom In"
         >
           <ZoomIn className="w-4 h-4" />
