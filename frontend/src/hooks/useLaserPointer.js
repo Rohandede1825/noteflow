@@ -21,7 +21,7 @@ function hexToRgb(hex) {
  * Ultra-Smooth Laser Pointer Engine
  * Uses continuous cubic Bezier spline interpolation and exponential decay for a glowing, silky multi-color laser trail.
  */
-export function useLaserPointer(laserCanvasRef, width = 1200, height = 1600) {
+export function useLaserPointer(laserCanvasRef, width = 720, height = 960) {
   const animFrameRef = useRef(null);
 
   useEffect(() => {

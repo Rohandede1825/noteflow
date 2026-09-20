@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { useLaserPointer } from '../../hooks/useLaserPointer';
 
-export function LaserLayer({ width = 1200, height = 1600 }) {
+export function LaserLayer({ width = 720, height = 960 }) {
   const laserCanvasRef = useRef(null);
   useLaserPointer(laserCanvasRef, width, height);
 

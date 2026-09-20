@@ -319,8 +319,8 @@ exports.importNoteFlow = async (req, res, next) => {
         title: p.title || `Page ${index + 1}`,
         template: p.template || newNotebook.pageTemplate,
         templateConfig: p.templateConfig || newNotebook.templateConfig,
-        width: p.width || 1200,
-        height: p.height || 1600,
+        width: p.width || 720,
+        height: p.height || 960,
         elements: p.elements || [],
         pdfBackground: p.pdfBackground || null,
         bookmarked: false

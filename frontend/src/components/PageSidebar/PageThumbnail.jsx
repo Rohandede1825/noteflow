@@ -36,15 +36,18 @@ export function PageThumbnail({
     const thumbWidth = 130;
     const thumbHeight = 173; // 3:4 aspect ratio
 
+    const pWidth = page?.width || 720;
+    const pHeight = page?.height || 960;
+
     canvas.width = thumbWidth * 2;
     canvas.height = thumbHeight * 2;
-    ctx.scale((thumbWidth * 2) / 1200, (thumbHeight * 2) / 1600);
+    ctx.scale((thumbWidth * 2) / pWidth, (thumbHeight * 2) / pHeight);
 
     // 1. Draw template
     renderPageTemplate(
       ctx,
-      1200,
-      1600,
+      pWidth,
+      pHeight,
       page.template || 'ruled',
       page.templateConfig || {},
       isDarkMode
@@ -54,7 +57,7 @@ export function PageThumbnail({
     if (page.pdfBackground) {
       const img = new Image();
       img.onload = () => {
-        ctx.drawImage(img, 0, 0, 1200, 1600);
+        ctx.drawImage(img, 0, 0, pWidth, pHeight);
       };
       img.src = page.pdfBackground;
     }

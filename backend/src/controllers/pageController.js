@@ -79,8 +79,8 @@ exports.createPage = async (req, res, next) => {
       title: title || `Page ${newPageNumber}`,
       template: template || notebook.pageTemplate || 'ruled',
       templateConfig: templateConfig || notebook.templateConfig,
-      width: width || 1200,
-      height: height || 1600,
+      width: width || 720,
+      height: height || 960,
       elements: elements || [],
       pdfBackground: pdfBackground || null,
       bookmarked: false

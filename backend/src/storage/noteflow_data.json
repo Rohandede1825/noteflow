@@ -292,8 +292,8 @@
         "lineColor": "rgba(255, 255, 255, 0.08)",
         "backgroundColor": "#1c1e22"
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [
         {
           "id": "elem-header-1",
@@ -513,8 +513,8 @@
         "lineColor": "rgba(255, 255, 255, 0.08)",
         "backgroundColor": "#1c1e22"
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [
         {
           "id": "elem-p2-t1",
@@ -560,8 +560,8 @@
         "lineColor": "rgba(255, 255, 255, 0.07)",
         "backgroundColor": "#1c1e22"
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [],
       "bookmarked": false,
       "createdAt": "2026-09-16T17:02:11.764Z",
@@ -581,8 +581,8 @@
         "lineColor": "rgba(255, 255, 255, 0.12)",
         "backgroundColor": "#1a1c20"
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [
         {
           "id": "elem-sys-1",
@@ -10491,8 +10491,8 @@
         "lineColor": "rgba(255, 255, 255, 0.12)",
         "backgroundColor": "#1a1c20"
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [],
       "bookmarked": false,
       "createdAt": "2026-09-16T17:02:11.764Z",
@@ -10512,8 +10512,8 @@
         "lineColor": "rgba(255, 255, 255, 0.08)",
         "backgroundColor": "#1c1e22"
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [
         {
           "id": "elem-ui-1",
@@ -10547,8 +10547,8 @@
         "lineColor": "rgba(255, 255, 255, 0.08)",
         "backgroundColor": "#1c1e22"
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [
         {
           "id": "elem-1789580751181-dq9nn",
@@ -10584,8 +10584,8 @@
         "lineColor": "rgba(255, 255, 255, 0.08)",
         "backgroundColor": "#1c1e22"
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [
         {
           "id": "elem-1789578809270-14o32",
@@ -10887,8 +10887,8 @@
         "lineColor": "rgba(255, 255, 255, 0.08)",
         "backgroundColor": "#1c1e22"
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [],
       "bookmarked": false,
       "createdAt": "2026-09-16T17:48:22.130Z",
@@ -10908,8 +10908,8 @@
         "lineColor": "rgba(255, 255, 255, 0.08)",
         "backgroundColor": "#1c1e22"
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [],
       "pdfBackground": null,
       "bookmarked": false,
@@ -10930,8 +10930,8 @@
         "lineColor": "rgba(255, 255, 255, 0.08)",
         "backgroundColor": "#1c1e22"
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [],
       "pdfBackground": null,
       "bookmarked": false,
@@ -10952,8 +10952,8 @@
         "gridSize": 28,
         "showMargin": true
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [
         {
           "id": "elem-1789581167126-euxxq",
@@ -20920,8 +20920,8 @@
         "gridSize": 28,
         "showMargin": true
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [],
       "pdfBackground": null,
       "bookmarked": false,
@@ -20942,8 +20942,8 @@
         "gridSize": 28,
         "showMargin": true
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [
         {
           "id": "elem-1789627339057-ol4nf",
@@ -27044,8 +27044,8 @@
         "gridSize": 28,
         "showMargin": true
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [],
       "bookmarked": false,
       "createdAt": "2026-09-17T06:43:03.032Z",
@@ -27065,8 +27065,8 @@
         "gridSize": 28,
         "showMargin": true
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [],
       "bookmarked": false,
       "createdAt": "2026-09-17T06:43:13.829Z",
@@ -27086,8 +27086,8 @@
         "gridSize": 28,
         "showMargin": true
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [
         {
           "id": "elem-split-1789627479225-1-oemc",
@@ -27189,8 +27189,8 @@
         "gridSize": 28,
         "showMargin": true
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [],
       "pdfBackground": null,
       "bookmarked": false,
@@ -27211,8 +27211,8 @@
         "gridSize": 28,
         "showMargin": true
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [],
       "pdfBackground": null,
       "bookmarked": false,
@@ -27233,8 +27233,8 @@
         "gridSize": 28,
         "showMargin": true
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [
         {
           "id": "elem-1789628047078-70h32",
@@ -33197,8 +33197,8 @@
         "gridSize": 28,
         "showMargin": true
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [
         {
           "id": "elem-1789627949941-q8ypm",
@@ -58540,8 +58540,8 @@
         "gridSize": 28,
         "showMargin": true
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [
         {
           "id": "elem-1789627946966-pnnkc",
@@ -94053,8 +94053,8 @@
         "gridSize": 28,
         "showMargin": true
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [],
       "pdfBackground": null,
       "bookmarked": false,
@@ -94075,8 +94075,8 @@
         "gridSize": 28,
         "showMargin": true
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [
         {
           "id": "elem-1789628286618-wqomw",
@@ -111173,8 +111173,8 @@
         "gridSize": 28,
         "showMargin": true
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [],
       "pdfBackground": null,
       "bookmarked": false,
@@ -111195,8 +111195,8 @@
         "gridSize": 28,
         "showMargin": true
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [
         {
           "id": "elem-split-1789629674489-1-81j9",
@@ -116351,8 +116351,8 @@
         "gridSize": 28,
         "showMargin": true
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [
         {
           "id": "elem-1789628565201-lzad9",
@@ -123576,8 +123576,8 @@
         "gridSize": 28,
         "showMargin": true
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [
         {
           "id": "elem-1789631405005-tvams",
@@ -124701,8 +124701,8 @@
         "gridSize": 28,
         "showMargin": true
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [
         {
           "id": "elem-1789631472703-dqmp8",
@@ -125079,8 +125079,8 @@
         "gridSize": 28,
         "showMargin": true
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [
         {
           "id": "elem-1789630175470-bi74v",
@@ -125327,8 +125327,8 @@
         "gridSize": 28,
         "showMargin": true
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [
         {
           "id": "elem-1789628718861-vy73a",
@@ -137800,8 +137800,8 @@
         "gridSize": 28,
         "showMargin": true
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [],
       "pdfBackground": null,
       "bookmarked": false,
@@ -137822,8 +137822,8 @@
         "gridSize": 28,
         "showMargin": true
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [],
       "pdfBackground": null,
       "bookmarked": false,
@@ -137844,8 +137844,8 @@
         "gridSize": 28,
         "showMargin": true
       },
-      "width": 1200,
-      "height": 1600,
+      "width": 720,
+      "height": 960,
       "elements": [],
       "pdfBackground": null,
       "bookmarked": false,

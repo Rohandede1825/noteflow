@@ -121,17 +121,17 @@ export function CanvasEngine() {
     const offsets = [];
     let currentY = 0;
     for (let i = 0; i < pages.length; i++) {
-      const h = pages[i]?.height || 1600;
-      const w = pages[i]?.width || 1200;
+      const h = pages[i]?.height || 960;
+      const w = pages[i]?.width || 720;
       offsets.push({ top: currentY, height: h, width: w });
       currentY += h + PAGE_GAP;
     }
-    const totalHeight = currentY > 0 ? currentY - PAGE_GAP : 1600;
+    const totalHeight = currentY > 0 ? currentY - PAGE_GAP : 960;
     return { offsets, totalHeight };
   }, [pages]);
 
   const { offsets, totalHeight } = getPageOffsets();
-  const maxPageWidth = Math.max(...pages.map(p => p.width || 1200), 1200);
+  const maxPageWidth = Math.max(...pages.map(p => p.width || 720), 720);
 
   // Convert screen coordinates to specific page index and page-relative (x, y) with 100% exact pixel precision
   const screenToPageCoordinates = useCallback((clientX, clientY) => {
@@ -157,7 +157,7 @@ export function CanvasEngine() {
     }
 
     targetIdx = Math.max(0, Math.min(pages.length - 1, targetIdx));
-    const pageOffset = pageOffsets[targetIdx] || { top: 0, height: 1600, width: 1200 };
+    const pageOffset = pageOffsets[targetIdx] || { top: 0, height: 960, width: 720 };
     const pageRelativeX = docX;
     const pageRelativeY = docY - pageOffset.top;
 
@@ -199,7 +199,7 @@ export function CanvasEngine() {
     if (!canvas) return;
 
     const { totalHeight } = getPageOffsets();
-    const maxPageWidth = Math.max(...pages.map(p => p.width || 1200), 1200);
+    const maxPageWidth = Math.max(...pages.map(p => p.width || 720), 720);
 
     canvas.width = maxPageWidth * dpr;
     canvas.height = totalHeight * dpr;
@@ -708,7 +708,7 @@ export function CanvasEngine() {
     if (canvas) {
       const ctx = canvas.getContext('2d');
       const { totalHeight } = getPageOffsets();
-      const maxPageWidth = Math.max(...pages.map(p => p.width || 1200), 1200);
+      const maxPageWidth = Math.max(...pages.map(p => p.width || 720), 720);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, maxPageWidth, totalHeight);
     }
@@ -829,7 +829,7 @@ export function CanvasEngine() {
 
       const { offsets, totalHeight } = getPageOffsets();
       const scaledTotalHeight = totalHeight * zoomLevel;
-      const maxPageWidth = Math.max(...pages.map(p => p.width || 1200), 1200);
+      const maxPageWidth = Math.max(...pages.map(p => p.width || 720), 720);
       const scaledWidth = maxPageWidth * zoomLevel;
 
       // Exact vertical boundaries

@@ -78,11 +78,11 @@ const pageSchema = new mongoose.Schema({
   },
   width: {
     type: Number,
-    default: 1200
+    default: 720
   },
   height: {
     type: Number,
-    default: 1600
+    default: 960
   },
   elements: [elementSchema],
   bookmarked: {

@@ -34,8 +34,8 @@ function SinglePageCanvasComponent({
   const hlCanvasRef = useRef(null);
   const inkCanvasRef = useRef(null);
 
-  const pageWidth = page?.width || 1200;
-  const pageHeight = page?.height || 1600;
+  const pageWidth = page?.width || 720;
+  const pageHeight = page?.height || 960;
 
   // 1. Render Background & Templates Layer
   const renderBackground = useCallback(() => {

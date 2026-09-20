@@ -8,8 +8,8 @@ import { downloadFile } from '../utils/fileHelpers';
  * Render a complete page offscreen onto an HTML5 canvas
  */
 export async function renderPageToCanvas(page, isDarkMode = true, scale = 2) {
-  const width = (page.width || 1200) * scale;
-  const height = (page.height || 1600) * scale;
+  const width = (page.width || 720) * scale;
+  const height = (page.height || 960) * scale;
 
   const canvas = document.createElement('canvas');
   canvas.width = width;
@@ -20,14 +20,14 @@ export async function renderPageToCanvas(page, isDarkMode = true, scale = 2) {
 
   // 1. Render background template (ruled, dotted, grid, blank)
   const templateConfig = page.templateConfig || {};
-  renderPageTemplate(ctx, page.width || 1200, page.height || 1600, page.template || 'ruled', templateConfig, isDarkMode);
+  renderPageTemplate(ctx, page.width || 720, page.height || 960, page.template || 'ruled', templateConfig, isDarkMode);
 
   // 2. Render PDF background backdrop if present
   if (page.pdfBackground) {
     await new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
-        ctx.drawImage(img, 0, 0, page.width || 1200, page.height || 1600);
+        ctx.drawImage(img, 0, 0, page.width || 720, page.height || 960);
         resolve();
       };
       img.onerror = resolve;

@@ -34,8 +34,8 @@ export function renderPageTemplate(ctx, width, height, template = 'ruled', confi
   const backgroundColor = config.backgroundColor || preset.backgroundColor;
   const lineColor = config.lineColor || preset.lineColor;
   const marginLineColor = config.marginLineColor || preset.marginLineColor;
-  const lineSpacing = config.lineSpacing || 44; // Comfortable 44px gap matching Goodnotes ruled notebook pages
-  const gridSize = config.gridSize || 28;
+  const lineSpacing = config.lineSpacing || 36; // Proportional 36px gap matching 720x960 3:4 ruled notebook pages
+  const gridSize = config.gridSize || 24;
   const showMargin = config.showMargin !== undefined ? config.showMargin : (template === 'ruled' && paperColorKey !== 'dark');
 
   ctx.save();
@@ -49,8 +49,8 @@ export function renderPageTemplate(ctx, width, height, template = 'ruled', confi
     ctx.strokeStyle = lineColor;
     ctx.lineWidth = 1;
 
-    // Header top margin gap (approx 52px)
-    const startY = 52;
+    // Header top margin gap (approx 44px)
+    const startY = 44;
     for (let y = startY; y < height; y += lineSpacing) {
       ctx.beginPath();
       ctx.moveTo(0, y);
