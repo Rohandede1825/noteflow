@@ -292,6 +292,12 @@ export const api = {
     };
 
     local.pages.push(newPage);
+    const nbIdx = local.notebooks.findIndex(n => (n._id === notebookId || n.id === notebookId));
+    if (nbIdx !== -1) {
+      if (!Array.isArray(local.notebooks[nbIdx].pages)) local.notebooks[nbIdx].pages = [];
+      local.notebooks[nbIdx].pages.push(newPage);
+      local.notebooks[nbIdx].updatedAt = new Date().toISOString();
+    }
     saveLocalData(local);
     return newPage;
   },

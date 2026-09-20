@@ -91,6 +91,7 @@ export const useToolStore = create((set, get) => ({
 
   // Laser Pointer Settings & Trail Points
   laserColor: '#EF4444',
+  laserWidth: 8,
   laserTrail: [],
 
   // 1-Click Action Tool Selection
@@ -147,6 +148,7 @@ export const useToolStore = create((set, get) => ({
 
   // Laser Pointer Actions
   setLaserColor: (laserColor) => set({ laserColor }),
+  setLaserWidth: (laserWidth) => set({ laserWidth }),
 
   addLaserPoint: (point) => {
     const now = Date.now();

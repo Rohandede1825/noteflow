@@ -46,6 +46,8 @@ export function useLaserPointer(laserCanvasRef, width = 1200, height = 1600) {
       const state = useToolStore.getState();
       const points = state.laserTrail;
       const laserColor = state.laserColor || '#EF4444';
+      const laserWidth = state.laserWidth || 8;
+      const laserScale = laserWidth / 8;
       const rgb = hexToRgb(laserColor);
       const now = Date.now();
 
@@ -66,9 +68,9 @@ export function useLaserPointer(laserCanvasRef, width = 1200, height = 1600) {
 
           ctx.beginPath();
           ctx.strokeStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${life * 0.45})`;
-          ctx.lineWidth = Math.max(2, 14 * life);
+          ctx.lineWidth = Math.max(2, 14 * life * laserScale);
           ctx.shadowColor = laserColor;
-          ctx.shadowBlur = 12 * life;
+          ctx.shadowBlur = 12 * life * laserScale;
           ctx.moveTo(prevMid.x, prevMid.y);
           ctx.quadraticCurveTo(p1.x, p1.y, mid.x, mid.y);
           ctx.stroke();
@@ -87,9 +89,9 @@ export function useLaserPointer(laserCanvasRef, width = 1200, height = 1600) {
 
           ctx.beginPath();
           ctx.strokeStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${life * 0.95})`;
-          ctx.lineWidth = Math.max(1.5, 5 * life);
+          ctx.lineWidth = Math.max(1.5, 5 * life * laserScale);
           ctx.shadowColor = laserColor;
-          ctx.shadowBlur = 6 * life;
+          ctx.shadowBlur = 6 * life * laserScale;
           ctx.moveTo(prevMid.x, prevMid.y);
           ctx.quadraticCurveTo(p1.x, p1.y, mid.x, mid.y);
           ctx.stroke();
@@ -108,7 +110,7 @@ export function useLaserPointer(laserCanvasRef, width = 1200, height = 1600) {
 
           ctx.beginPath();
           ctx.strokeStyle = `rgba(255, 255, 255, ${life * 0.95})`;
-          ctx.lineWidth = Math.max(1, 2.2 * life);
+          ctx.lineWidth = Math.max(1, 2.2 * life * laserScale);
           ctx.shadowBlur = 0;
           ctx.moveTo(prevMid.x, prevMid.y);
           ctx.quadraticCurveTo(p1.x, p1.y, mid.x, mid.y);

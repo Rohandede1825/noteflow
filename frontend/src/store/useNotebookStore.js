@@ -205,23 +205,39 @@ export const useNotebookStore = create((set, get) => ({
 
   // Add new page to current notebook
   addPage: async (template = null) => {
-    const { currentNotebook, pages } = get();
+    const { currentNotebook, pages, isDirty } = get();
     if (!currentNotebook) return;
+
+    if (isDirty) {
+      await get().saveCurrentPageNow();
+    }
 
     try {
       const payload = {
         template: template || currentNotebook.pageTemplate || 'ruled',
         templateConfig: currentNotebook.templateConfig
       };
-      const newPage = await api.createPage(currentNotebook._id || currentNotebook.id, payload);
+      const nbId = currentNotebook._id || currentNotebook.id;
+      const newPage = await api.createPage(nbId, payload);
+      if (!newPage) return;
+
       const updatedPages = [...pages, newPage];
+      const newIdx = updatedPages.length - 1;
+
+      const updatedNotebook = {
+        ...currentNotebook,
+        pages: updatedPages
+      };
 
       set({
+        currentNotebook: updatedNotebook,
         pages: updatedPages,
-        currentPageIndex: updatedPages.length - 1,
+        currentPageIndex: newIdx,
         currentPage: newPage,
+        targetScrollPageIndex: newIdx,
         undoStack: [],
-        redoStack: []
+        redoStack: [],
+        isDirty: false
       });
 
       // Update current notebook page count in list
