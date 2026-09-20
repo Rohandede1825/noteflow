@@ -49,6 +49,86 @@ const LASER_SIZES = [
   { id: 'intense', label: 'Intense', width: 22 }
 ];
 
+// 1. Realistic Fountain / Stylus Pen Icon
+function StylusPenIcon({ color = '#2F6BFF', isActive }) {
+  return (
+    <div className={`relative flex flex-col items-center justify-center transition-all duration-200 ${isActive ? '-translate-y-1 scale-110' : 'hover:scale-105 opacity-80 hover:opacity-100'}`}>
+      <svg width="22" height="28" viewBox="0 0 24 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        {/* Pen Barrel Upper */}
+        <path d="M7 2H17V12H7V2Z" fill="#3A3D45" rx="1.5" />
+        <rect x="8" y="3" width="8" height="2" fill="#525661" rx="0.5" />
+        {/* Pen Grip Section */}
+        <path d="M7 12H17L15.5 20H8.5L7 12Z" fill="#25272D" />
+        {/* Nib Collar (Metallic) */}
+        <rect x="9" y="19.5" width="6" height="2" fill="#D1D5DB" rx="0.5" />
+        {/* Fountain Nib Cone */}
+        <path d="M9 21.5L12 29L15 21.5H9Z" fill={color} />
+        {/* Nib Metal Highlight & Slit */}
+        <line x1="12" y1="22" x2="12" y2="28" stroke="#FFFFFF" strokeWidth="0.8" strokeLinecap="round" />
+        <circle cx="12" cy="24" r="0.75" fill="#FFFFFF" />
+      </svg>
+      {/* Active Glow Dot under the pen */}
+      <span className="w-1.5 h-1.5 rounded-full mt-0.5 shadow-sm" style={{ backgroundColor: color }} />
+    </div>
+  );
+}
+
+// 2. Chisel Highlighter Marker Icon
+function HighlighterIcon({ color = '#FACC15', isActive }) {
+  return (
+    <div className={`relative flex flex-col items-center justify-center transition-all duration-200 ${isActive ? '-translate-y-1 scale-110' : 'hover:scale-105 opacity-80 hover:opacity-100'}`}>
+      <svg width="22" height="28" viewBox="0 0 24 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        {/* Marker Body */}
+        <rect x="6" y="2" width="12" height="14" rx="2" fill="#2E3038" />
+        <rect x="7.5" y="4" width="9" height="10" rx="1" fill={color} fillOpacity="0.85" />
+        {/* Chisel Collar */}
+        <path d="M8 16H16L15 21H9L8 16Z" fill="#1C1E23" />
+        {/* Angled Chisel Tip */}
+        <path d="M9 21L15 22L13.5 28L10.5 28L9 21Z" fill={color} />
+      </svg>
+      <span className="w-1.5 h-1.5 rounded-full mt-0.5 shadow-sm" style={{ backgroundColor: color }} />
+    </div>
+  );
+}
+
+// 3. Laser Pointer Beam Icon
+function LaserBeamIcon({ color = '#EF4444', isActive }) {
+  return (
+    <div className={`relative flex flex-col items-center justify-center transition-all duration-200 ${isActive ? '-translate-y-1 scale-110' : 'hover:scale-105 opacity-80 hover:opacity-100'}`}>
+      <svg width="22" height="28" viewBox="0 0 24 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        {/* Laser Torch Body */}
+        <rect x="9" y="3" width="6" height="18" rx="1.5" fill="#374151" />
+        <rect x="9.5" y="5" width="5" height="4" fill="#1F2937" rx="0.5" />
+        {/* Button */}
+        <circle cx="12" cy="12" r="1" fill={color} />
+        {/* Emitter Tip */}
+        <path d="M10 21H14L12.5 25H11.5L10 21Z" fill="#9CA3AF" />
+        {/* Beam Glow Dot */}
+        <circle cx="12" cy="27.5" r="2.5" fill={color} />
+        <circle cx="12" cy="27.5" r="1" fill="#FFFFFF" />
+      </svg>
+      <span className="w-1.5 h-1.5 rounded-full mt-0.5 shadow-sm" style={{ backgroundColor: color, boxShadow: `0 0 6px ${color}` }} />
+    </div>
+  );
+}
+
+// 4. Rubber Block Eraser Icon
+function RubberEraserIcon({ isActive }) {
+  return (
+    <div className={`relative flex flex-col items-center justify-center transition-all duration-200 ${isActive ? '-translate-y-1 scale-110' : 'hover:scale-105 opacity-80 hover:opacity-100'}`}>
+      <svg width="22" height="28" viewBox="0 0 24 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        {/* Cardboard Sleeve */}
+        <path d="M6 5H18V17H6V5Z" fill="#2563EB" rx="1.5" />
+        <line x1="8" y1="11" x2="16" y2="11" stroke="#FFFFFF" strokeWidth="1" strokeLinecap="round" />
+        {/* Angled Rubber Tip (Pink / White) */}
+        <path d="M6 17H18L16.5 26.5L7.5 26.5L6 17Z" fill="#F472B6" />
+        <path d="M7.5 24H16.5L16 26.5H8L7.5 24Z" fill="#FFFFFF" />
+      </svg>
+      <span className="w-1.5 h-1.5 rounded-full mt-0.5 bg-pink-400 shadow-sm" />
+    </div>
+  );
+}
+
 export function TeachingOverlay() {
   const { isTeachingMode, setTeachingMode, zoomLevel, setZoomLevel, addToast, openModal } = useUIStore();
   const {
@@ -443,85 +523,73 @@ export function TeachingOverlay() {
       )}
 
       {/* ------------------------------------------------------------- */}
-      {/* Main Teacher Mode Floating Bar */}
+      {/* Main Teacher Mode Floating Dock (Goodnotes Stationery Style) */}
       {/* ------------------------------------------------------------- */}
-      <div className="flex items-center gap-2 p-2 bg-[#18191d]/95 backdrop-blur-xl border border-neutral-700/80 rounded-2xl shadow-floating text-neutral-200 select-none">
+      <div className="flex items-center gap-2 px-3 py-2 bg-[#202126]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.6)] text-neutral-200 select-none">
         {/* Badge / Title */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-purple-600/25 border border-purple-500/30 text-xs font-bold text-purple-300">
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600/20 border border-purple-500/30 text-xs font-bold text-purple-300">
           <Presentation className="w-4 h-4 text-purple-300" />
-          <span className="hidden sm:inline">Teacher Mode</span>
+          <span className="hidden md:inline">Teacher Mode</span>
         </div>
 
-        <div className="h-5 w-px bg-neutral-800" />
+        <div className="h-6 w-px bg-white/10" />
 
-        {/* 1. Core Teaching Drawing Tools */}
-        <div className="flex items-center gap-1">
+        {/* 1. Stationery Pen Tray */}
+        <div className="flex items-center gap-1.5 bg-black/25 px-2 py-1 rounded-xl border border-white/5">
           {/* Laser Pointer */}
           <button
             onClick={() => handleToolClick('laser')}
-            className={`p-2.5 rounded-xl transition-all relative ${
+            className={`p-2 rounded-xl transition-all relative ${
               activeTool === 'laser'
-                ? 'bg-rose-600 text-white shadow-lg shadow-rose-500/30 font-bold'
-                : 'text-neutral-400 hover:text-rose-400 hover:bg-neutral-800'
+                ? 'bg-white/15 ring-1 ring-rose-400/50 shadow-md'
+                : 'hover:bg-white/10'
             }`}
-            title="Laser Pointer (Click to select, click again to change color & size)"
+            title="Laser Pointer (Click to select, re-click to customize color & size)"
           >
-            <Wand2 className="w-[18px] h-[18px]" />
-            <span
-              className="absolute bottom-1 right-1 w-2 h-2 rounded-full border border-black/40 shadow-sm"
-              style={{ backgroundColor: laserColor }}
-            />
+            <LaserBeamIcon color={laserColor} isActive={activeTool === 'laser'} />
           </button>
 
-          {/* Pen */}
+          {/* Pen / Stylus */}
           <button
             onClick={() => handleToolClick('pen')}
-            className={`p-2.5 rounded-xl transition-all relative ${
+            className={`p-2 rounded-xl transition-all relative ${
               activeTool === 'pen'
-                ? 'bg-blue-600 text-white shadow-md font-bold'
-                : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
+                ? 'bg-white/15 ring-1 ring-blue-400/50 shadow-md'
+                : 'hover:bg-white/10'
             }`}
-            title="Pen (Click to select, click again to change style, color & size)"
+            title="Pen (Click to select, re-click to customize color, size & style)"
           >
-            <Pen className="w-[18px] h-[18px]" />
-            <span
-              className="absolute bottom-1 right-1 w-2 h-2 rounded-full border border-black/40 shadow-sm"
-              style={{ backgroundColor: penColor }}
-            />
+            <StylusPenIcon color={penColor} isActive={activeTool === 'pen'} />
           </button>
 
           {/* Highlighter */}
           <button
             onClick={() => handleToolClick('highlighter')}
-            className={`p-2.5 rounded-xl transition-all relative ${
+            className={`p-2 rounded-xl transition-all relative ${
               activeTool === 'highlighter'
-                ? 'bg-blue-600 text-white shadow-md font-bold'
-                : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
+                ? 'bg-white/15 ring-1 ring-yellow-400/50 shadow-md'
+                : 'hover:bg-white/10'
             }`}
-            title="Highlighter (Click to select, click again to change color & width)"
+            title="Highlighter (Click to select, re-click to customize color & width)"
           >
-            <Highlighter className="w-[18px] h-[18px]" />
-            <span
-              className="absolute bottom-1 right-1 w-2 h-2 rounded-full border border-black/40 shadow-sm"
-              style={{ backgroundColor: highlighterColor }}
-            />
+            <HighlighterIcon color={highlighterColor} isActive={activeTool === 'highlighter'} />
           </button>
 
           {/* Eraser */}
           <button
             onClick={() => handleToolClick('eraser')}
-            className={`p-2.5 rounded-xl transition-all ${
+            className={`p-2 rounded-xl transition-all relative ${
               activeTool === 'eraser'
-                ? 'bg-blue-600 text-white shadow-md font-bold'
-                : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
+                ? 'bg-white/15 ring-1 ring-pink-400/50 shadow-md'
+                : 'hover:bg-white/10'
             }`}
-            title="Eraser (Click to select, click again to change size & mode)"
+            title="Eraser (Click to select, re-click to customize size & mode)"
           >
-            <Eraser className="w-[18px] h-[18px]" />
+            <RubberEraserIcon isActive={activeTool === 'eraser'} />
           </button>
         </div>
 
-        <div className="h-5 w-px bg-neutral-800" />
+        <div className="h-6 w-px bg-white/10" />
 
         {/* 2. Undo & Redo */}
         <div className="flex items-center gap-0.5">
@@ -530,7 +598,7 @@ export function TeachingOverlay() {
             disabled={!canUndo}
             className={`p-2 rounded-xl transition-all ${
               canUndo
-                ? 'text-neutral-300 hover:text-white hover:bg-neutral-800'
+                ? 'text-neutral-300 hover:text-white hover:bg-white/10'
                 : 'text-neutral-600 cursor-not-allowed'
             }`}
             title="Undo (Ctrl+Z)"
@@ -542,7 +610,7 @@ export function TeachingOverlay() {
             disabled={!canRedo}
             className={`p-2 rounded-xl transition-all ${
               canRedo
-                ? 'text-neutral-300 hover:text-white hover:bg-neutral-800'
+                ? 'text-neutral-300 hover:text-white hover:bg-white/10'
                 : 'text-neutral-600 cursor-not-allowed'
             }`}
             title="Redo (Ctrl+Shift+Z)"
@@ -551,71 +619,71 @@ export function TeachingOverlay() {
           </button>
         </div>
 
-        <div className="h-5 w-px bg-neutral-800" />
+        <div className="h-6 w-px bg-white/10" />
 
         {/* 3. Add New Page Button */}
         <button
           onClick={handleAddNewPage}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#204272] hover:bg-[#2a5899] text-white text-xs font-bold border border-blue-400/30 shadow-sm transition-all active:scale-95"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-[#2F6BFF] to-[#1E50D8] hover:from-[#3D78FF] hover:to-[#2A5CE6] text-white text-xs font-bold shadow-md transition-all active:scale-95 border border-white/15"
           title="Add New Blank Page"
         >
-          <Plus className="w-4 h-4 text-blue-300" />
+          <Plus className="w-4 h-4 text-white" />
           <span className="hidden md:inline">Add Page</span>
         </button>
 
-        <div className="h-5 w-px bg-neutral-800" />
+        <div className="h-6 w-px bg-white/10" />
 
-        {/* 4. Page Navigation */}
-        <div className="flex items-center gap-1 bg-neutral-900/80 px-2 py-1 rounded-xl border border-neutral-800">
+        {/* 4. Page Stepper Navigation */}
+        <div className="flex items-center gap-1 bg-black/30 px-2.5 py-1.5 rounded-xl border border-white/10">
           <button
             onClick={handlePrev}
             disabled={currentPageIndex <= 0}
             className="p-1 rounded-lg text-neutral-400 hover:text-white disabled:opacity-30 transition-colors"
-            title="Previous Page (ArrowLeft)"
+            title="Previous Page"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="text-xs font-semibold px-2 font-mono">
-            {currentNum} / {totalPages}
+          <span className="text-xs font-semibold px-2 font-mono text-neutral-200">
+            {currentNum} <span className="text-neutral-500">/</span> {totalPages}
           </span>
           <button
             onClick={handleNext}
             disabled={currentPageIndex >= pages.length - 1}
             className="p-1 rounded-lg text-neutral-400 hover:text-white disabled:opacity-30 transition-colors"
-            title="Next Page (ArrowRight)"
+            title="Next Page"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="h-5 w-px bg-neutral-800" />
+        <div className="h-6 w-px bg-white/10" />
 
-        {/* 5. Zoom controls */}
-        <div className="flex items-center gap-0.5">
+        {/* 5. Zoom Stepper */}
+        <div className="flex items-center gap-1 bg-black/30 px-2 py-1 rounded-xl border border-white/10">
           <button
-            onClick={() => setZoomLevel(zoomLevel - 0.15)}
-            className="p-1.5 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition-colors"
+            onClick={() => setZoomLevel(Math.max(0.3, zoomLevel - 0.15))}
+            className="p-1 text-neutral-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
             title="Zoom Out"
           >
-            <ZoomOut className="w-4 h-4" />
+            <ZoomOut className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => setZoomLevel(1.0)}
-            className="px-1.5 py-0.5 text-[11px] font-mono font-semibold text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-md transition-colors"
+            className="px-2 py-0.5 text-[11px] font-mono font-semibold text-neutral-300 hover:text-white hover:bg-white/10 rounded-md transition-colors"
             title="Reset Zoom to 100%"
           >
             {Math.round(zoomLevel * 100)}%
           </button>
           <button
-            onClick={() => setZoomLevel(zoomLevel + 0.15)}
-            className="p-1.5 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition-colors"
+            onClick={() => setZoomLevel(Math.min(3.0, zoomLevel + 0.15))}
+            className="p-1 text-neutral-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
             title="Zoom In"
           >
-            <ZoomIn className="w-4 h-4" />
+            <ZoomIn className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        <div className="h-5 w-px bg-neutral-800" />
+        <div className="h-6 w-px bg-white/10" />
 
         {/* 6. Exit button */}
         <button
@@ -625,7 +693,7 @@ export function TeachingOverlay() {
               document.exitFullscreen().catch(() => {});
             }
           }}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white text-xs font-semibold transition-colors"
+          className="flex items-center gap-1 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-neutral-300 hover:text-white text-xs font-semibold transition-colors border border-white/10"
           title="Exit Teaching Mode (Escape)"
         >
           <X className="w-3.5 h-3.5" />

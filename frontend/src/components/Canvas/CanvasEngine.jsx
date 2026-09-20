@@ -75,7 +75,8 @@ export function CanvasEngine() {
     isPanning,
     setIsPanning,
     zoomAroundCursor,
-    openContextMenu
+    openContextMenu,
+    isTeachingMode
   } = useUIStore();
 
   const { settings } = useSettingsStore();
@@ -1371,86 +1372,90 @@ export function CanvasEngine() {
         </div>
       )}
 
-      {/* Page Indicator Pill (Bottom-Left: 1 of N) */}
-      <div className="absolute bottom-5 left-5 z-30 flex items-center gap-1.5 px-3.5 py-1 bg-[#1c1d20]/90 backdrop-blur-md border border-white/10 rounded-full shadow-floating text-xs font-semibold text-white/90">
-        <span>{currentNum}</span>
-        <span className="text-white/50 font-normal">of</span>
-        <span>{totalPages}</span>
-      </div>
+      {/* Page Indicator Pill (Bottom-Left: 1 of N) - Hidden in Teacher Mode */}
+      {!isTeachingMode && (
+        <div className="absolute bottom-5 left-5 z-30 flex items-center gap-1.5 px-3.5 py-1 bg-[#1c1d20]/90 backdrop-blur-md border border-white/10 rounded-full shadow-floating text-xs font-semibold text-white/90">
+          <span>{currentNum}</span>
+          <span className="text-white/50 font-normal">of</span>
+          <span>{totalPages}</span>
+        </div>
+      )}
 
-      {/* Floating Bottom-Right Zoom & View Controls for Stylus/Pen Users */}
-      <div className="absolute bottom-5 right-5 z-30 flex items-center gap-1 p-1 bg-[#1c1d20]/95 backdrop-blur-md border border-white/15 rounded-2xl shadow-floating text-xs font-semibold text-white/90">
-        {/* Fit to Width Button */}
-        <button
-          onClick={handleFitToWidth}
-          className="p-2 rounded-xl hover:bg-white/15 text-white/80 hover:text-white transition-colors"
-          title="Fit Page to Width"
-        >
-          <Maximize2 className="w-4 h-4" />
-        </button>
-
-        <div className="h-4 w-px bg-white/10" />
-
-        {/* Zoom Out */}
-        <button
-          onClick={() => setZoomLevel(Math.max(0.2, zoomLevel - 0.15))}
-          className="p-2 rounded-xl hover:bg-white/15 text-white/80 hover:text-white transition-colors"
-          title="Zoom Out"
-        >
-          <ZoomOut className="w-4 h-4" />
-        </button>
-
-        {/* Zoom percentage with dropdown */}
-        <div className="relative">
+      {/* Floating Bottom-Right Zoom & View Controls for Stylus/Pen Users - Hidden in Teacher Mode */}
+      {!isTeachingMode && (
+        <div className="absolute bottom-5 right-5 z-30 flex items-center gap-1 p-1 bg-[#1c1d20]/95 backdrop-blur-md border border-white/15 rounded-2xl shadow-floating text-xs font-semibold text-white/90">
+          {/* Fit to Width Button */}
           <button
-            onClick={() => setShowZoomPresets(!showZoomPresets)}
-            className="flex items-center gap-0.5 px-2.5 py-1.5 rounded-xl hover:bg-white/15 text-white transition-colors font-mono text-xs"
-            title="Zoom Presets"
+            onClick={handleFitToWidth}
+            className="p-2 rounded-xl hover:bg-white/15 text-white/80 hover:text-white transition-colors"
+            title="Fit Page to Width"
           >
-            <span>{Math.round(zoomLevel * 100)}%</span>
-            <ChevronDown className="w-3 h-3 text-white/60" />
+            <Maximize2 className="w-4 h-4" />
           </button>
 
-          {showZoomPresets && (
-            <div className="absolute bottom-11 right-0 w-28 bg-[#25262B] border border-white/15 rounded-2xl shadow-floating p-1 flex flex-col gap-0.5 text-xs z-50">
-              <button
-                onClick={() => {
-                  handleFitToWidth();
-                  setShowZoomPresets(false);
-                }}
-                className="py-1 px-2.5 rounded-xl text-left text-neutral-300 hover:bg-neutral-800 transition-colors"
-              >
-                Fit Width
-              </button>
-              {ZOOM_PRESETS.map((p) => (
+          <div className="h-4 w-px bg-white/10" />
+
+          {/* Zoom Out */}
+          <button
+            onClick={() => setZoomLevel(Math.max(0.2, zoomLevel - 0.15))}
+            className="p-2 rounded-xl hover:bg-white/15 text-white/80 hover:text-white transition-colors"
+            title="Zoom Out"
+          >
+            <ZoomOut className="w-4 h-4" />
+          </button>
+
+          {/* Zoom percentage with dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowZoomPresets(!showZoomPresets)}
+              className="flex items-center gap-0.5 px-2.5 py-1.5 rounded-xl hover:bg-white/15 text-white transition-colors font-mono text-xs"
+              title="Zoom Presets"
+            >
+              <span>{Math.round(zoomLevel * 100)}%</span>
+              <ChevronDown className="w-3 h-3 text-white/60" />
+            </button>
+
+            {showZoomPresets && (
+              <div className="absolute bottom-11 right-0 w-28 bg-[#25262B] border border-white/15 rounded-2xl shadow-floating p-1 flex flex-col gap-0.5 text-xs z-50">
                 <button
-                  key={p}
                   onClick={() => {
-                    setZoomLevel(p);
+                    handleFitToWidth();
                     setShowZoomPresets(false);
                   }}
-                  className={`py-1 px-2.5 rounded-xl text-left font-mono transition-colors ${
-                    Math.abs(zoomLevel - p) < 0.05
-                      ? 'bg-[#2F6BFF] text-white font-bold'
-                      : 'text-neutral-300 hover:bg-neutral-800'
-                  }`}
+                  className="py-1 px-2.5 rounded-xl text-left text-neutral-300 hover:bg-neutral-800 transition-colors"
                 >
-                  {Math.round(p * 100)}%
+                  Fit Width
                 </button>
-              ))}
-            </div>
-          )}
-        </div>
+                {ZOOM_PRESETS.map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => {
+                      setZoomLevel(p);
+                      setShowZoomPresets(false);
+                    }}
+                    className={`py-1 px-2.5 rounded-xl text-left font-mono transition-colors ${
+                      Math.abs(zoomLevel - p) < 0.05
+                        ? 'bg-[#2F6BFF] text-white font-bold'
+                        : 'text-neutral-300 hover:bg-neutral-800'
+                    }`}
+                  >
+                    {Math.round(p * 100)}%
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
-        {/* Zoom In */}
-        <button
-          onClick={() => setZoomLevel(Math.min(3.0, zoomLevel + 0.15))}
-          className="p-2 rounded-xl hover:bg-white/15 text-white/80 hover:text-white transition-colors"
-          title="Zoom In"
-        >
-          <ZoomIn className="w-4 h-4" />
-        </button>
-      </div>
+          {/* Zoom In */}
+          <button
+            onClick={() => setZoomLevel(Math.min(3.0, zoomLevel + 0.15))}
+            className="p-2 rounded-xl hover:bg-white/15 text-white/80 hover:text-white transition-colors"
+            title="Zoom In"
+          >
+            <ZoomIn className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
