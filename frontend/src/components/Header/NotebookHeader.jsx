@@ -25,6 +25,7 @@ import {
   Shapes,
   FileText,
   Wand2,
+  Mic,
   ChevronDown,
   Palette,
   Presentation
