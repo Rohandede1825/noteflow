@@ -9,6 +9,9 @@ import {
   Eraser,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
+  ChevronDown,
+  GripVertical,
   ZoomIn,
   ZoomOut,
   X,
@@ -129,8 +132,167 @@ function RubberEraserIcon({ isActive }) {
   );
 }
 
+// 5. Right-Side Stylus Scroller for Fullscreen/Teacher Mode
+function RightSideScroller({ pages, currentPageIndex, onSelectPage, zoomLevel, panOffset, setPanOffset }) {
+  const trackRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [hoverPage, setHoverPage] = useState(null);
+  const totalPages = pages.length || 1;
+  const PAGE_GAP = 32;
+
+  // Calculate total doc height
+  let totalDocHeight = 0;
+  const pageOffsets = [];
+  for (let i = 0; i < pages.length; i++) {
+    const h = pages[i]?.height || 960;
+    pageOffsets.push({ top: totalDocHeight, height: h });
+    totalDocHeight += h + PAGE_GAP;
+  }
+  totalDocHeight = totalDocHeight > 0 ? totalDocHeight - PAGE_GAP : 960;
+  const scaledHeight = totalDocHeight * zoomLevel;
+  const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
+
+  // Max and Min pan
+  const maxPanY = 40;
+  const minPanY = Math.min(40, viewportHeight - scaledHeight - 80);
+  const totalPanRange = Math.max(1, maxPanY - minPanY);
+
+  // Current scroll progress (0.0 to 1.0)
+  const scrollProgress = Math.max(0, Math.min(1, (maxPanY - panOffset.y) / totalPanRange));
+
+  const handlePointerDown = (e) => {
+    e.stopPropagation();
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch (_) {}
+    setIsDragging(true);
+    handlePointerMove(e);
+  };
+
+  const handlePointerMove = (e) => {
+    if (!trackRef.current) return;
+    const rect = trackRef.current.getBoundingClientRect();
+    const clampedY = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
+    const fraction = clampedY / rect.height;
+
+    // Calculate target pan
+    const targetPanY = maxPanY - fraction * totalPanRange;
+    setPanOffset(prev => ({ ...prev, y: targetPanY }));
+
+    // Estimate page index under cursor
+    const estimatedDocY = fraction * totalDocHeight;
+    let targetIdx = 0;
+    for (let i = 0; i < pageOffsets.length; i++) {
+      if (estimatedDocY >= pageOffsets[i].top && estimatedDocY <= pageOffsets[i].top + pageOffsets[i].height + PAGE_GAP) {
+        targetIdx = i;
+        break;
+      }
+    }
+    setHoverPage(targetIdx + 1);
+  };
+
+  const handlePointerUp = (e) => {
+    setIsDragging(false);
+    setHoverPage(null);
+    try {
+      if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+    } catch (_) {}
+  };
+
+  const scrollStep = (direction) => {
+    const step = 220 * zoomLevel;
+    const nextY = direction === 'up'
+      ? Math.min(maxPanY, panOffset.y + step)
+      : Math.max(minPanY, panOffset.y - step);
+    setPanOffset(prev => ({ ...prev, y: nextY }));
+  };
+
+  return (
+    <div
+      className="fixed right-3.5 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center select-none"
+      style={{ touchAction: 'none' }}
+    >
+      {/* Live Tooltip when dragging with pen */}
+      {isDragging && hoverPage && (
+        <div className="absolute right-14 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-xl bg-[#1e2025]/95 backdrop-blur-md border border-blue-500/50 shadow-floating text-white text-xs font-bold whitespace-nowrap animate-in fade-in zoom-in-95 pointer-events-none">
+          Page {hoverPage} of {totalPages}
+        </div>
+      )}
+
+      {/* Main Scroller Capsule */}
+      <div className="flex flex-col items-center py-2.5 px-1.5 rounded-full bg-[#1c1d22]/90 backdrop-blur-2xl border border-white/15 shadow-[0_12px_40px_rgba(0,0,0,0.6)] text-neutral-300 gap-2 w-9 md:w-10">
+        {/* Scroll Up Button */}
+        <button
+          onClick={() => scrollStep('up')}
+          className="p-1 rounded-full text-neutral-400 hover:text-white hover:bg-white/10 transition-colors"
+          title="Scroll Up"
+        >
+          <ChevronUp className="w-4 h-4" />
+        </button>
+
+        {/* Scroll Track */}
+        <div
+          ref={trackRef}
+          onPointerDown={handlePointerDown}
+          onPointerMove={isDragging ? handlePointerMove : undefined}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          className="relative w-2.5 h-64 md:h-72 rounded-full bg-white/5 border border-white/10 cursor-pointer flex flex-col items-center justify-between py-1"
+          title="Drag with stylus pen or touch to scroll pages"
+        >
+          {/* Page Marker Dots */}
+          {Array.from({ length: totalPages }).map((_, idx) => (
+            <div
+              key={idx}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelectPage(idx);
+              }}
+              className={`w-1.5 h-1.5 rounded-full transition-all ${
+                idx === currentPageIndex
+                  ? 'bg-blue-400 scale-125 ring-2 ring-blue-500/50'
+                  : 'bg-white/20 hover:bg-white/50'
+              }`}
+            />
+          ))}
+
+          {/* Draggable Pen Thumb */}
+          <div
+            style={{
+              position: 'absolute',
+              top: `calc(${scrollProgress * 100}% - ${scrollProgress * 36}px)`,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '18px',
+              height: '36px'
+            }}
+            className={`rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing transition-shadow ${
+              isDragging
+                ? 'bg-gradient-to-b from-[#3D78FF] to-[#204BB5] ring-2 ring-white/60 shadow-[0_0_12px_rgba(47,107,255,0.8)] scale-110'
+                : 'bg-gradient-to-b from-[#33353D] to-[#202127] border border-white/25 hover:border-blue-400 shadow-md'
+            }`}
+          >
+            <GripVertical className="w-3 h-3 text-white/80" />
+          </div>
+        </div>
+
+        {/* Scroll Down Button */}
+        <button
+          onClick={() => scrollStep('down')}
+          className="p-1 rounded-full text-neutral-400 hover:text-white hover:bg-white/10 transition-colors"
+          title="Scroll Down"
+        >
+          <ChevronDown className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function TeachingOverlay() {
-  const { isTeachingMode, setTeachingMode, zoomLevel, setZoomLevel, addToast, openModal } = useUIStore();
+  const { isTeachingMode, setTeachingMode, zoomLevel, setZoomLevel, panOffset, setPanOffset, addToast, openModal } = useUIStore();
   const {
     activeTool,
     setActiveTool,
@@ -173,6 +335,7 @@ export function TeachingOverlay() {
   const [activeMenu, setActiveMenu] = useState(null);
   const menuContainerRef = useRef(null);
 
+  // Close any active menu when clicking anywhere on screen or canvas
   useEffect(() => {
     const handleOutsideClick = (e) => {
       if (menuContainerRef.current && !menuContainerRef.current.contains(e.target)) {
@@ -180,9 +343,9 @@ export function TeachingOverlay() {
       }
     };
     if (activeMenu) {
-      document.addEventListener('mousedown', handleOutsideClick);
+      window.addEventListener('pointerdown', handleOutsideClick, true);
     }
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
+    return () => window.removeEventListener('pointerdown', handleOutsideClick, true);
   }, [activeMenu]);
 
   if (!isTeachingMode) return null;
@@ -700,6 +863,20 @@ export function TeachingOverlay() {
           <span>Exit</span>
         </button>
       </div>
+
+      {/* ------------------------------------------------------------- */}
+      {/* Right-Side Stylus Scroller Track (Smooth Multi-Page Drag) */}
+      {/* ------------------------------------------------------------- */}
+      <RightSideScroller
+        pages={pages}
+        currentPageIndex={currentPageIndex}
+        onSelectPage={(pageIdx) => {
+          useNotebookStore.setState({ targetScrollPageIndex: pageIdx, currentPageIndex: pageIdx, currentPage: pages[pageIdx] });
+        }}
+        zoomLevel={zoomLevel}
+        panOffset={panOffset}
+        setPanOffset={setPanOffset}
+      />
     </div>
   );
 }
