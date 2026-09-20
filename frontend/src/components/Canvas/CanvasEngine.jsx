@@ -659,7 +659,7 @@ export function CanvasEngine() {
       if (activeTool === 'pen' || activeTool === 'pencil' || activeTool === 'highlighter') {
         const pts = activeStrokePointsRef.current;
         const lastPt = pts[pts.length - 1];
-        if (!lastPt || getPointDistance(lastPt, coords) > 0.2) {
+        if (!lastPt || getPointDistance(lastPt, coords) > 0.08) {
           pts.push(coords);
           scratchNeedsRenderRef.current = true;
         }

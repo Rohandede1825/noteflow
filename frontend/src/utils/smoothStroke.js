@@ -1,7 +1,9 @@
+import { getStroke } from 'perfect-freehand';
+
 /**
  * NoteFlow Goodnotes-Grade Digital Inking Engine
- * Provides smooth continuous handwriting, non-linear pressure curves,
- * dynamic strength modulation, and zero-dot continuous stroke rendering.
+ * Powered by perfect-freehand for Excalidraw/Goodnotes-grade organic ink strokes,
+ * non-linear pressure curves, and zero-dot continuous stroke rendering.
  */
 
 export function getPointDistance(p1, p2) {
@@ -29,28 +31,23 @@ export function calculateWidth(baseWidth = 2.5, pressure = 0.5, penType = 'ball'
   const pressureCurve = Math.pow(p, 0.85);
 
   if (penType === 'fountain') {
-    // Fountain Pen: Expressive calligraphic line variation
     return Math.max(0.5, baseWidth * (0.35 + pressureCurve * 1.3) * str);
   }
   if (penType === 'brush') {
-    // Brush Pen: Wide dynamic range for artistic lettering
     return Math.max(0.8, baseWidth * (0.2 + pressureCurve * 1.8) * str);
   }
   if (penType === 'pencil') {
-    // Pencil: Soft, organic texture with subtle pressure response
     return Math.max(0.5, baseWidth * (0.7 + pressureCurve * 0.5) * str);
   }
   if (penType === 'highlighter') {
-    // Highlighter: Fixed broad stroke width
     return baseWidth;
   }
-  // Ball Pen (Standard Goodnotes pen): Crisp, predictable, clean handwriting
   return Math.max(0.5, baseWidth * (0.8 + pressureCurve * 0.4) * str);
 }
 
 /**
  * Draw ultra-smooth natural handwriting stroke on canvas.
- * Seamless continuous midpoint quadratic curves with zero dot artifacts.
+ * Uses perfect-freehand polygon spline outline for smooth, fluid, natural curves.
  */
 export function drawSmoothStroke(
   ctx,
@@ -64,91 +61,116 @@ export function drawSmoothStroke(
   if (!rawPoints || rawPoints.length === 0) return;
 
   const count = rawPoints.length;
-
-  ctx.save();
-  ctx.globalAlpha = penType === 'pencil' ? opacity * 0.85 : opacity;
-  ctx.strokeStyle = color;
-  ctx.fillStyle = color;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
+  const str = Math.max(0.2, Math.min(2.0, strength || 1.0));
 
   // 1. Single Tap / Dot
   if (count === 1) {
     const p = rawPoints[0];
-    const w = calculateWidth(baseWidth, p.pressure ?? 0.5, penType, strength);
+    const rawP = typeof p.pressure === 'number' && p.pressure > 0 ? p.pressure : 0.45;
+    const r = Math.max(0.8, (baseWidth * 0.9 * str * (0.8 + rawP * 0.4)) / 2);
+    ctx.save();
+    ctx.globalAlpha = penType === 'pencil' ? opacity * 0.85 : opacity;
+    ctx.fillStyle = color;
     ctx.beginPath();
-    ctx.arc(p.x, p.y, Math.max(w / 2, 0.6), 0, Math.PI * 2);
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
     return;
   }
 
-  // 2. 2-Point Line Segment
-  if (count === 2) {
-    const p0 = rawPoints[0];
-    const p1 = rawPoints[1];
-    const avgP = ((p0.pressure ?? 0.5) + (p1.pressure ?? 0.5)) / 2;
-    ctx.lineWidth = calculateWidth(baseWidth, avgP, penType, strength);
-    ctx.beginPath();
-    ctx.moveTo(p0.x, p0.y);
-    ctx.lineTo(p1.x, p1.y);
-    ctx.stroke();
-    ctx.restore();
-    return;
+  // Format points with smoothed pressure for perfect-freehand [x, y, pressure]
+  let prevP = typeof rawPoints[0].pressure === 'number' && rawPoints[0].pressure > 0 ? rawPoints[0].pressure : 0.45;
+  const strokeInput = [];
+  
+  for (let i = 0; i < count; i++) {
+    const pt = rawPoints[i];
+    const rawP = typeof pt.pressure === 'number' && pt.pressure > 0 ? pt.pressure : 0.45;
+    // Low-pass exponential moving average filter on pressure to avoid micro-jitter
+    const smoothP = prevP * 0.6 + rawP * 0.4;
+    prevP = smoothP;
+    strokeInput.push([pt.x, pt.y, smoothP]);
   }
 
-  // 3. Variable-Width Dynamic Inking for Fountain and Brush Pens
-  if (penType === 'fountain' || penType === 'brush') {
-    let p0 = rawPoints[0];
-    let p1 = rawPoints[1];
-    let mid0 = { x: (p0.x + p1.x) / 2, y: (p0.y + p1.y) / 2 };
-
-    ctx.lineWidth = calculateWidth(baseWidth, p0.pressure ?? 0.5, penType, strength);
-    ctx.beginPath();
-    ctx.moveTo(p0.x, p0.y);
-    ctx.lineTo(mid0.x, mid0.y);
-    ctx.stroke();
-
-    for (let i = 1; i < count - 1; i++) {
-      const pCurrent = rawPoints[i];
-      const pNext = rawPoints[i + 1];
-      const midNext = { x: (pCurrent.x + pNext.x) / 2, y: (pCurrent.y + pNext.y) / 2 };
-
-      ctx.lineWidth = calculateWidth(baseWidth, pCurrent.pressure ?? 0.5, penType, strength);
-      ctx.beginPath();
-      ctx.moveTo(mid0.x, mid0.y);
-      ctx.quadraticCurveTo(pCurrent.x, pCurrent.y, midNext.x, midNext.y);
-      ctx.stroke();
-
-      mid0 = midNext;
+  // Tailored stroke options per pen instrument
+  const size = baseWidth * 1.7 * str;
+  let options = {
+    size: Math.max(1, size),
+    thinning: 0.4,
+    smoothing: 0.6,
+    streamline: 0.55,
+    easing: (t) => Math.sin((t * Math.PI) / 2),
+    start: {
+      taper: 3,
+      easing: (t) => t * t,
+      cap: true
+    },
+    end: {
+      taper: 4,
+      easing: (t) => t * (2 - t),
+      cap: true
     }
+  };
 
-    const lastPt = rawPoints[count - 1];
-    ctx.lineWidth = calculateWidth(baseWidth, lastPt.pressure ?? 0.5, penType, strength);
-    ctx.beginPath();
-    ctx.moveTo(mid0.x, mid0.y);
-    ctx.lineTo(lastPt.x, lastPt.y);
-    ctx.stroke();
-  } else {
-    // 4. Standard Ball Pen, Pencil, and Highlighter: Continuous Midpoint Spline
-    const avgP = rawPoints.reduce((acc, pt) => acc + (pt.pressure ?? 0.5), 0) / count;
-    ctx.lineWidth = calculateWidth(baseWidth, avgP, penType, strength);
-
-    ctx.beginPath();
-    ctx.moveTo(rawPoints[0].x, rawPoints[0].y);
-
-    for (let i = 0; i < count - 1; i++) {
-      const p0 = rawPoints[i];
-      const p1 = rawPoints[i + 1];
-      const midX = (p0.x + p1.x) / 2;
-      const midY = (p0.y + p1.y) / 2;
-      ctx.quadraticCurveTo(p0.x, p0.y, midX, midY);
-    }
-
-    ctx.lineTo(rawPoints[count - 1].x, rawPoints[count - 1].y);
-    ctx.stroke();
+  if (penType === 'fountain') {
+    options = {
+      size: Math.max(1.2, size * 1.15),
+      thinning: 0.7,
+      smoothing: 0.65,
+      streamline: 0.6,
+      start: { taper: 6, cap: true },
+      end: { taper: 8, cap: true }
+    };
+  } else if (penType === 'brush') {
+    options = {
+      size: Math.max(1.5, size * 1.3),
+      thinning: 0.85,
+      smoothing: 0.6,
+      streamline: 0.55,
+      start: { taper: 10, cap: true },
+      end: { taper: 14, cap: true }
+    };
+  } else if (penType === 'pencil') {
+    options = {
+      size: Math.max(0.8, size * 0.85),
+      thinning: 0.25,
+      smoothing: 0.5,
+      streamline: 0.45,
+      start: { taper: 2, cap: true },
+      end: { taper: 2, cap: true }
+    };
+  } else if (penType === 'highlighter') {
+    options = {
+      size: Math.max(6, baseWidth * 1.5),
+      thinning: 0,
+      smoothing: 0.7,
+      streamline: 0.65,
+      start: { taper: 0, cap: true },
+      end: { taper: 0, cap: true }
+    };
   }
 
+  const outline = getStroke(strokeInput, options);
+  if (!outline || outline.length === 0) return;
+
+  ctx.save();
+  ctx.globalAlpha = penType === 'pencil' ? opacity * 0.85 : opacity;
+  ctx.fillStyle = color;
+  ctx.strokeStyle = color;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  ctx.beginPath();
+  const [x0, y0] = outline[0];
+  ctx.moveTo(x0, y0);
+  for (let i = 1; i < outline.length; i++) {
+    const [x1, y1] = outline[i];
+    const [x2, y2] = outline[(i + 1) % outline.length];
+    const midX = (x1 + x2) / 2;
+    const midY = (y1 + y2) / 2;
+    ctx.quadraticCurveTo(x1, y1, midX, midY);
+  }
+  ctx.closePath();
+  ctx.fill();
   ctx.restore();
 }
 
