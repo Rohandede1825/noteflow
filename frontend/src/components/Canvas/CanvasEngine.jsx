@@ -229,7 +229,8 @@ export function CanvasEngine() {
               isHl ? highlighterColor : penColor,
               isHl ? highlighterWidth : penWidth,
               isHl ? highlighterOpacity : penOpacity,
-              isHl ? 'highlighter' : penType
+              isHl ? 'highlighter' : penType,
+              strokeStrength
             );
           } else if ((activeTool === 'shapes' || activeTool === 'line') && activeShapeStartRef.current) {
             const start = activeShapeStartRef.current;
@@ -271,6 +272,7 @@ export function CanvasEngine() {
     penWidth,
     penOpacity,
     penType,
+    strokeStrength,
     highlighterColor,
     highlighterWidth,
     highlighterOpacity,
@@ -375,12 +377,30 @@ export function CanvasEngine() {
       return;
     }
 
-    try {
-      e.target.setPointerCapture?.(e.pointerId);
-    } catch (_) {}
+    // Set pointer capture on the element that has listeners
+    const targetElement = e.currentTarget || stackWrapperRef.current;
+    if (targetElement && typeof targetElement.setPointerCapture === 'function') {
+      try {
+        targetElement.setPointerCapture(e.pointerId);
+      } catch (_) {}
+    }
+
+    // Prevent default touch gestures / browser panning interference
+    if (e.cancelable) {
+      e.preventDefault();
+    }
 
     const { pageIndex, x, y, globalDocY, docX } = screenToPageCoordinates(e.clientX, e.clientY);
-    const pressure = (e.pressure !== undefined && e.pressure > 0) ? e.pressure : 0.5;
+    
+    // Distinguish pointer types and ensure non-zero fallback pressure for pen
+    const pointerType = e.pointerType || 'mouse';
+    let pressure = 0.5;
+    if (pointerType === 'pen') {
+      pressure = (typeof e.pressure === 'number' && e.pressure > 0) ? e.pressure : 0.4;
+    } else if (pointerType === 'touch') {
+      pressure = (typeof e.pressure === 'number' && e.pressure > 0) ? e.pressure : 0.5;
+    }
+
     const pageCoords = { x, y, pressure };
 
     isDrawingRef.current = true;
@@ -409,11 +429,9 @@ export function CanvasEngine() {
 
     // Select Tool: Hit test elements
     if (activeTool === 'select') {
-      // Check if clicked a resize handle
       const targetPage = pages[pageIndex];
       const elements = targetPage?.elements || [];
 
-      // If clicked on canvas background without handle
       const hit = elements.slice().reverse().find(el => {
         if (el.points && (el.type === 'pen' || el.type === 'pencil' || el.type === 'highlighter' || el.type === 'line' || (el.type === 'shape' && el.points.length >= 2))) {
           return isPointNearStroke(pageCoords, el.points, 14);
@@ -448,25 +466,7 @@ export function CanvasEngine() {
       scratchNeedsRenderRef.current = true;
     } else {
       activeStrokePointsRef.current = [pageCoords];
-      // Instant synchronous 0ms pen tap rendering
-      const canvas = inFlightCanvasRef.current;
-      if (canvas) {
-        const ctx = canvas.getContext('2d');
-        const { offsets } = getPageOffsets();
-        const pageTop = offsets[pageIndex]?.top || 0;
-        ctx.save();
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        drawSmoothStroke(
-          ctx,
-          [{ ...pageCoords, y: pageCoords.y + pageTop }],
-          activeTool === 'highlighter' ? highlighterColor : penColor,
-          activeTool === 'highlighter' ? highlighterWidth : penWidth,
-          activeTool === 'highlighter' ? highlighterOpacity : penOpacity,
-          activeTool === 'highlighter' ? 'highlighter' : penType,
-          strokeStrength
-        );
-        ctx.restore();
-      }
+      scratchNeedsRenderRef.current = true;
     }
   };
 
@@ -502,14 +502,42 @@ export function CanvasEngine() {
 
     if (!isDrawingRef.current && !isResizingSelectedRef.current) return;
 
-    const rawEvents = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+    if (e.cancelable) {
+      e.preventDefault();
+    }
+
+    // Extract all coalesced events reliably from native or synthetic event
+    let rawEvents = [e];
+    if (typeof e.getCoalescedEvents === 'function') {
+      const coalesced = e.getCoalescedEvents();
+      if (coalesced && coalesced.length > 0) rawEvents = coalesced;
+    } else if (typeof e.nativeEvent?.getCoalescedEvents === 'function') {
+      const coalesced = e.nativeEvent.getCoalescedEvents();
+      if (coalesced && coalesced.length > 0) rawEvents = coalesced;
+    }
+
+    const pageIdx = activePageIndexRef.current;
+    const { offsets } = getPageOffsets();
+    const pageTop = offsets[pageIdx]?.top || 0;
+    const stackWrapper = stackWrapperRef.current;
+    const rect = stackWrapper ? stackWrapper.getBoundingClientRect() : { left: 0, top: 0 };
 
     for (let evIdx = 0; evIdx < rawEvents.length; evIdx++) {
       const ev = rawEvents[evIdx];
-      const { x, y } = screenToPageCoordinates(ev.clientX, ev.clientY);
-      const pressure = (ev.pressure !== undefined && ev.pressure > 0) ? ev.pressure : 0.5;
+      const docX = (ev.clientX - rect.left) / zoomLevel;
+      const docY = (ev.clientY - rect.top) / zoomLevel;
+      const x = docX;
+      const y = docY - pageTop;
+
+      const pType = ev.pointerType || e.pointerType || 'mouse';
+      let pressure = 0.5;
+      if (pType === 'pen') {
+        pressure = (typeof ev.pressure === 'number' && ev.pressure > 0) ? ev.pressure : 0.4;
+      } else if (pType === 'touch') {
+        pressure = (typeof ev.pressure === 'number' && ev.pressure > 0) ? ev.pressure : 0.5;
+      }
+
       const coords = { x, y, pressure };
-      const pageIdx = activePageIndexRef.current;
 
       // Handle dragging selected element
       if (isDraggingSelectedRef.current && dragStartCoordsRef.current) {
@@ -631,31 +659,9 @@ export function CanvasEngine() {
       if (activeTool === 'pen' || activeTool === 'pencil' || activeTool === 'highlighter') {
         const pts = activeStrokePointsRef.current;
         const lastPt = pts[pts.length - 1];
-        if (!lastPt || getPointDistance(lastPt, coords) > 0.3) {
+        if (!lastPt || getPointDistance(lastPt, coords) > 0.2) {
           pts.push(coords);
-
-          // Direct real-pen rendering (0ms latency, authentic Goodnotes handwriting)
-          const canvas = inFlightCanvasRef.current;
-          if (canvas) {
-            const ctx = canvas.getContext('2d');
-            const { offsets } = getPageOffsets();
-            const pageTop = offsets[pageIdx]?.top || 0;
-            const shiftedPts = pts.map(p => ({ ...p, y: p.y + pageTop }));
-
-            ctx.save();
-            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-            ctx.clearRect(0, 0, maxPageWidth, totalHeight);
-            drawSmoothStroke(
-              ctx,
-              shiftedPts,
-              activeTool === 'highlighter' ? highlighterColor : penColor,
-              activeTool === 'highlighter' ? highlighterWidth : penWidth,
-              activeTool === 'highlighter' ? highlighterOpacity : penOpacity,
-              activeTool === 'highlighter' ? 'highlighter' : penType,
-              strokeStrength
-            );
-            ctx.restore();
-          }
+          scratchNeedsRenderRef.current = true;
         }
       } else if (activeTool === 'shapes' || activeTool === 'line') {
         activeStrokePointsRef.current = [coords];
@@ -673,9 +679,14 @@ export function CanvasEngine() {
       setIsPanning(false);
     }
 
-    try {
-      e.target.releasePointerCapture?.(e.pointerId);
-    } catch (_) {}
+    const targetElement = e.currentTarget || stackWrapperRef.current;
+    if (targetElement && typeof targetElement.releasePointerCapture === 'function') {
+      try {
+        if (targetElement.hasPointerCapture?.(e.pointerId)) {
+          targetElement.releasePointerCapture(e.pointerId);
+        }
+      } catch (_) {}
+    }
 
     lastLaserCoordsRef.current = null;
 
@@ -703,8 +714,21 @@ export function CanvasEngine() {
     }
 
     const pageIdx = activePageIndexRef.current;
-    const { x, y } = screenToPageCoordinates(e.clientX, e.clientY);
-    const pressure = (e.pressure !== undefined && e.pressure > 0) ? e.pressure : 0.5;
+    const { offsets } = getPageOffsets();
+    const pageTop = offsets[pageIdx]?.top || 0;
+    const stackWrapper = stackWrapperRef.current;
+    const rect = stackWrapper ? stackWrapper.getBoundingClientRect() : { left: 0, top: 0 };
+    const docX = (e.clientX - rect.left) / zoomLevel;
+    const docY = (e.clientY - rect.top) / zoomLevel;
+    const x = docX;
+    const y = docY - pageTop;
+    const pType = e.pointerType || 'mouse';
+    let pressure = 0.5;
+    if (pType === 'pen') {
+      pressure = (typeof e.pressure === 'number' && e.pressure > 0) ? e.pressure : 0.4;
+    } else if (pType === 'touch') {
+      pressure = (typeof e.pressure === 'number' && e.pressure > 0) ? e.pressure : 0.5;
+    }
     const coords = { x, y, pressure };
 
     if (activeTool === 'pen' || activeTool === 'pencil' || activeTool === 'highlighter') {
@@ -779,6 +803,12 @@ export function CanvasEngine() {
       }
       activeShapeStartRef.current = null;
       activeStrokePointsRef.current = [];
+    }
+  };
+
+  const handleLostPointerCapture = (e) => {
+    if (isDrawingRef.current) {
+      handlePointerUp(e);
     }
   };
 
@@ -1001,7 +1031,8 @@ export function CanvasEngine() {
       onContextMenu={handleContextMenu}
       onPointerEnter={() => setEraserCursorPos(prev => ({ ...prev, isOver: true }))}
       onPointerLeave={() => setEraserCursorPos(prev => ({ ...prev, isOver: false }))}
-      className={`relative flex-1 w-full h-full overflow-hidden select-none bg-[#141517] ${
+      style={{ touchAction: 'none' }}
+      className={`relative flex-1 w-full h-full overflow-hidden select-none touch-none bg-[#141517] ${
         isSpacePressedRef.current || isPanning
           ? 'cursor-panning'
           : isEraserActive
@@ -1022,13 +1053,15 @@ export function CanvasEngine() {
           minHeight: `${totalHeight}px`,
           padding: 0,
           margin: 0,
-          gap: `${PAGE_GAP}px`
+          gap: `${PAGE_GAP}px`,
+          touchAction: 'none'
         }}
-        className="flex flex-col items-center"
+        className="flex flex-col items-center touch-none"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
+        onLostPointerCapture={handleLostPointerCapture}
       >
         {/* Render each page in the vertical sequence */}
         {pages.map((page, idx) => (
@@ -1045,7 +1078,8 @@ export function CanvasEngine() {
         {/* Global Live Active In-Flight Scratch Layer */}
         <canvas
           ref={inFlightCanvasRef}
-          className="absolute inset-0 pointer-events-none rounded-sm z-20"
+          style={{ touchAction: 'none' }}
+          className="absolute inset-0 pointer-events-none rounded-sm z-20 touch-none"
         />
 
         {/* Laser Pointer Animation Layer */}

@@ -145,7 +145,12 @@ export function TeachingOverlay() {
 
       {/* Exit button */}
       <button
-        onClick={() => setTeachingMode(false)}
+        onClick={() => {
+          setTeachingMode(false);
+          if (document.fullscreenElement && document.exitFullscreen) {
+            document.exitFullscreen().catch(() => {});
+          }
+        }}
         className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white text-xs font-semibold transition-colors"
         title="Exit Teaching Mode (Escape)"
       >

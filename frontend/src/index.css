@@ -55,7 +55,18 @@ body {
   background-color: var(--color-bg-primary);
   color: var(--color-text-primary);
   transition: background-color 0.2s ease, color 0.2s ease;
+  touch-action: none;
 }
+
+/* Touch action helpers for drawing canvas */
+.touch-none {
+  touch-action: none !important;
+}
+
+canvas {
+  touch-action: none;
+}
+
 
 /* Custom scrollbars */
 ::-webkit-scrollbar {

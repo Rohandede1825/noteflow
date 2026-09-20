@@ -7,7 +7,8 @@ import {
   Trash2,
   Sliders,
   Check,
-  Star
+  Star,
+  Presentation
 } from 'lucide-react';
 
 export function TitleMenu({ isOpen, onClose }) {
@@ -95,6 +96,21 @@ export function TitleMenu({ isOpen, onClose }) {
         >
           <Star className={`w-4 h-4 ${currentNotebook.favorite ? 'text-[#2F6BFF] fill-[#2F6BFF]' : 'text-[var(--color-text-muted)]'}`} />
           <span>{currentNotebook.favorite ? 'Favorited' : 'Add to Favorites'}</span>
+        </button>
+
+        {/* Teacher Mode */}
+        <button
+          onClick={() => {
+            onClose();
+            useUIStore.getState().setTeachingMode(true);
+            if (!document.fullscreenElement) {
+              document.documentElement.requestFullscreen().catch(() => {});
+            }
+          }}
+          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-purple-400 hover:text-purple-300 hover:bg-purple-600/20 transition-colors"
+        >
+          <Presentation className="w-4 h-4 text-purple-400" />
+          <span>Teacher Mode (F5)</span>
         </button>
 
         {/* Paper Settings */}

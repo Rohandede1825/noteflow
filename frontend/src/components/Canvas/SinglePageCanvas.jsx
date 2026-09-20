@@ -186,37 +186,38 @@ function SinglePageCanvasComponent({
         width: `${pageWidth}px`,
         height: `${pageHeight}px`,
         margin: 0,
-        padding: 0
+        padding: 0,
+        touchAction: 'none'
       }}
       className={`relative ${
         isDarkMode ? 'shadow-paper-dark' : 'shadow-paper-light'
-      } rounded-sm overflow-hidden shrink-0 transition-shadow ${
+      } rounded-sm overflow-hidden shrink-0 transition-shadow touch-none ${
         isActive ? 'ring-1 ring-[#2F6BFF]/40' : ''
       }`}
     >
       {/* 1. Background Template Layer */}
       <canvas
         ref={bgCanvasRef}
-        className="absolute inset-0 pointer-events-none rounded-sm z-0"
+        className="absolute inset-0 pointer-events-none rounded-sm z-0 touch-none"
       />
 
       {/* 2. Objects Layer (Images, Shapes, Text, Emojis) */}
       <canvas
         ref={objCanvasRef}
-        className="absolute inset-0 pointer-events-none rounded-sm z-10"
+        className="absolute inset-0 pointer-events-none rounded-sm z-10 touch-none"
       />
 
       {/* 3. Highlighter Layer */}
       <canvas
         ref={hlCanvasRef}
-        className="absolute inset-0 pointer-events-none rounded-sm z-15"
+        className="absolute inset-0 pointer-events-none rounded-sm z-15 touch-none"
         style={{ mixBlendMode: isDarkMode ? 'screen' : 'multiply', opacity: isDarkMode ? 0.85 : 0.95 }}
       />
 
       {/* 4. Pen Drawing Inks Layer */}
       <canvas
         ref={inkCanvasRef}
-        className="absolute inset-0 pointer-events-none rounded-sm z-20"
+        className="absolute inset-0 pointer-events-none rounded-sm z-20 touch-none"
       />
     </div>
   );

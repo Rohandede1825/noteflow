@@ -27,6 +27,7 @@ function startServer() {
   } catch (err) {
     console.error('[Electron] Error starting backend server:', err.message);
   }
+  
 }
 
 function waitForServer(url, timeout = 10000) {

@@ -9,7 +9,8 @@ import {
   Trash2,
   Download,
   Copy,
-  Plus
+  Plus,
+  Presentation
 } from 'lucide-react';
 
 export function RightClickMenu() {
@@ -104,6 +105,20 @@ export function RightClickMenu() {
       >
         <Plus className="w-3.5 h-3.5 text-emerald-400" />
         <span>Insert New Page</span>
+      </button>
+
+      <button
+        onClick={() => {
+          closeContextMenu();
+          useUIStore.getState().setTeachingMode(true);
+          if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(() => {});
+          }
+        }}
+        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-purple-400 hover:text-purple-300 hover:bg-purple-600/20 transition-colors"
+      >
+        <Presentation className="w-3.5 h-3.5 text-purple-400" />
+        <span>Teacher Mode (F5)</span>
       </button>
 
       <div className="h-px bg-neutral-800 my-1" />

@@ -25,9 +25,9 @@ import {
   Shapes,
   FileText,
   Wand2,
-  Mic,
   ChevronDown,
-  Palette
+  Palette,
+  Presentation
 } from 'lucide-react';
 
 export function NotebookHeader() {
@@ -61,7 +61,8 @@ export function NotebookHeader() {
   const {
     isPageSidebarOpen,
     togglePageSidebar,
-    openModal
+    openModal,
+    setTeachingMode
   } = useUIStore();
 
   const [isTitleMenuOpen, setIsTitleMenuOpen] = useState(false);
@@ -517,8 +518,22 @@ export function NotebookHeader() {
           </div>
         </div>
 
-        {/* 3. Right Group: Add Page, Share/Export, More */}
+        {/* 3. Right Group: Teacher Mode, Add Page, Share/Export, More */}
         <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            onClick={() => {
+              setTeachingMode(true);
+              if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+              }
+            }}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 border border-purple-500/40 text-xs font-semibold shadow-sm transition-all"
+            title="Teacher Mode / Full-Screen Presentation (F5)"
+          >
+            <Presentation className="w-[18px] h-[18px] text-purple-300" />
+            <span className="hidden lg:inline">Teacher Mode</span>
+          </button>
+
           <button
             onClick={() => addPage()}
             className="p-2.5 rounded-xl text-white/80 hover:text-white hover:bg-white/10 transition-colors"

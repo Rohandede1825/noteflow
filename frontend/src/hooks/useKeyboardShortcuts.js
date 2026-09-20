@@ -38,9 +38,26 @@ export function useKeyboardShortcuts({ onTriggerImageUpload } = {}) {
       }
 
       // Print
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') {
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'p') {
         e.preventDefault();
         window.print();
+        return;
+      }
+
+      // Teacher Mode / Fullscreen Toggle (F5 or Ctrl+Shift+F)
+      if (e.key === 'F5' || ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'f')) {
+        e.preventDefault();
+        const nextTeaching = !isTeachingMode;
+        setTeachingMode(nextTeaching);
+        if (nextTeaching) {
+          if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(() => {});
+          }
+        } else {
+          if (document.fullscreenElement && document.exitFullscreen) {
+            document.exitFullscreen().catch(() => {});
+          }
+        }
         return;
       }
 
@@ -48,7 +65,12 @@ export function useKeyboardShortcuts({ onTriggerImageUpload } = {}) {
       if (e.key === 'Escape') {
         closePopup();
         if (activeModal) closeModal();
-        if (isTeachingMode) setTeachingMode(false);
+        if (isTeachingMode) {
+          setTeachingMode(false);
+          if (document.fullscreenElement && document.exitFullscreen) {
+            document.exitFullscreen().catch(() => {});
+          }
+        }
         return;
       }
 
